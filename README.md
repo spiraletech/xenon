@@ -1,112 +1,108 @@
 # XENON
 
-**Codename:** Music Trinity Engine
+**Codename:** Music Trinity Engine  
+**Binary:** `XENON.exe`  
+**Language:** C++20
 
-XENON is the shared integration and contract layer connecting three independent native applications:
-
-- **EtherPlayer / EtherPlay** — perception, playback, listening state
-- **Spiral AI** — reasoning, continuity, musical intent
-- **EtherBeat** — composition, arrangement, generation, revision and rendering
+XENON is the new native Music Trinity creation/runtime program. It supersedes EtherBeat as the active music-generation body while keeping EtherPlayer and Spiral AI independent.
 
 Core rule:
 
-> **EtherPlayer perceives. Spiral understands. EtherBeat creates. XENON connects.**
+> **EtherPlayer perceives. Spiral understands. XENON creates.**
 
-XENON is **not** a DAW, audio renderer, media player, or LLM implementation. It is the stable protocol boundary that lets those systems cooperate without merging codebases.
-
-## Music Trinity loop
+## Architecture
 
 ```text
-EtherPlayer
-    │ MusicFrame v1
-    ▼
-  XENON
-    │
+EtherPlayer / EtherPlay
+    │ MusicFrameV1
     ▼
 Spiral AI
-    │ ProductionIntent v1
+    │ ProductionIntentV1
     ▼
-  XENON
-    │
+XENON.exe
+    │ RenderArtifactV1
     ▼
-EtherBeat
-    │ RenderArtifact v1
-    ▼
-  XENON
-    │
-    ▼
-EtherPlayer
+EtherPlayer / EtherPlay
 ```
 
-The first proof target is one closed loop:
+XENON owns music creation, project revisions, renderer routing, arrangement execution and exported audio. Spiral owns reasoning and continuity. EtherPlayer owns playback and perception.
 
-1. Play a reference in EtherPlayer.
-2. Publish `MusicFrameV1` through XENON.
-3. Spiral compiles musical intent.
-4. Publish `ProductionIntentV1` through XENON.
-5. EtherBeat renders a preview.
-6. Publish `RenderArtifactV1` through XENON.
-7. EtherPlayer auditions the result.
-8. Spiral receives revision feedback and changes only requested musical dimensions.
+## v0.1 native foundation
+
+The first implementation intentionally proves the executable and render lifecycle before adding model backends.
+
+```text
+ProductionIntentV1
+        │
+        ▼
+    xenon::Engine
+        │
+        ▼
+    WavRenderer
+        │
+        ▼
+<project>_rN.wav
+        │
+        ▼
+RenderArtifactV1
+```
+
+The deterministic preview renderer is a temporary native proof backend. BPM, duration, seed, drum density, bass weight and texture grit already alter the generated PCM16 WAV. It will later sit beside real model/DSP/MIDI backends rather than defining XENON's final sound.
 
 ## Repository responsibility
 
-This repository owns:
+XENON owns:
 
-- versioned cross-application schemas
-- capability/tool identifiers
-- request/response envelopes
-- permission-boundary semantics
-- transport-neutral adapter interfaces
-- compatibility tests and Trinity end-to-end fixtures
+- `XENON.exe`
+- Music Trinity schemas
+- project/revision state
+- arrangement and production execution
+- renderer/backend routing
+- MIDI and DSP expansion
+- exported stems/audio
+- Spiral-facing creation commands
+- EtherPlayer audition handoff
 
-This repository does **not** own:
+XENON does not own:
 
 - EtherPlayer playback internals
-- Spiral model/runtime internals
-- EtherBeat generation/DSP internals
-- application UI
+- Spiral/CORTEX inference internals
+- ORGANIC long-term user memory
 
 ## Canonical repositories
 
 ```text
 spiraletech/xenon
-    shared Music Trinity contracts + integration
+    XENON.exe + Music Trinity creation engine
 
 spiraletech/spiralos-ai-genius
-    CORTEX + ORGANIC + XENON client
-
-spiraletech/ether-beat-ai
-    composition/generation + XENON adapter
+    CORTEX + ORGANIC + musical intent compiler
 
 EtherPlayer / EtherPlay
-    polished native playback/perception applications + XENON adapter
+    polished native playback/perception applications
+
+spiraletech/ether-beat-ai
+    legacy/prototype generation research; no longer the canonical Trinity executable
 ```
 
-## Initial protocol namespace
+## Build
 
 ```text
-etherplayer.get_current_track
-etherplayer.get_library_state
-etherplayer.analyze_audio
-etherplayer.extract_features
-etherplayer.seek
-etherplayer.queue_track
-etherplayer.set_metadata
-
-etherbeat.get_project_state
-etherbeat.get_arrangement
-etherbeat.get_stems
-etherbeat.analyze_reference
-etherbeat.create_arrangement
-etherbeat.generate_midi
-etherbeat.select_drum_pattern
-etherbeat.build_chord_progression
-etherbeat.request_stem
-etherbeat.apply_etherseam
-etherbeat.export_song
+cmake -S . -B build
+cmake --build build --config Release
+ctest --test-dir build -C Release --output-on-failure
 ```
 
-## Status
+The resulting application target is `XENON` (`XENON.exe` on Windows).
 
-`XENON v0.1` begins with protocol/schema stabilization before transport implementation.
+## Current proof target
+
+1. `XENON.exe` boots.
+2. It accepts a `ProductionIntentV1`.
+3. `xenon::Engine` opens or continues project state.
+4. The native preview backend renders revision `rN`.
+5. XENON returns `RenderArtifactV1`.
+6. A follow-up intent creates `rN+1` without resetting the project.
+7. EtherPlayer audition/IPC is added as the next external boundary.
+
+**Status:** `XENON v0.1 native foundation in progress.`
