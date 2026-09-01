@@ -4,6 +4,7 @@
 
 #include <windows.h>
 #include <commdlg.h>
+#include <mfapi.h>
 
 #include "xenon/cortex.hpp"
 #include "xenon/engine.hpp"
@@ -75,13 +76,13 @@ void drawText(HDC dc, const std::wstring& value, RECT rect, int size, bool bold 
     DeleteObject(font);
 }
 
-void drawSpectrum(HDC dc, const RECT& rect, xenon::SpectrumFrame frame) {
+void drawSpectrum(HDC dc, const RECT& rect, const xenon::SpectrumFrame& frame) {
     HBRUSH panel = CreateSolidBrush(RGB(9, 9, 11));
     FillRect(dc, &rect, panel);
     DeleteObject(panel);
 
     HPEN grid = CreatePen(PS_SOLID, 1, RGB(44, 39, 25));
-    auto oldPen = SelectObject(dc, grid);
+    const auto oldPen = SelectObject(dc, grid);
     for (int i = 0; i <= 8; ++i) {
         const int x = rect.left + (rect.right - rect.left) * i / 8;
         MoveToEx(dc, x, rect.top, nullptr);
@@ -130,7 +131,7 @@ void renderFromPrompt(HWND hwnd) {
     musicFrame.track_id = utf8(g_app->current_track.filename().wstring());
     musicFrame.title = utf8(g_app->current_track.stem().wstring());
     musicFrame.position_seconds = g_app->player.positionSeconds();
-    const auto spectrum = g_app->player.currentSpectrum();
+    const auto& spectrum = g_app->player.currentSpectrum();
     musicFrame.brightness = spectrum.brightness;
     musicFrame.spectral_density = spectrum.spectral_density;
     musicFrame.transient_density = spectrum.transient_density;
@@ -138,7 +139,7 @@ void renderFromPrompt(HWND hwnd) {
     xenon::CortexContext context;
     context.spectrum = spectrum;
     context.preferences = g_app->organic.preferences();
-    context.revision_notes = g_app->organic.revisionNotes();
+    context.revision_notes = g_app->organic.revision_notes();
 
     auto intent = g_app->cortex.interpret(utf8(request), musicFrame, context);
     if (intent.project_id.empty()) intent.project_id = "xenon_session";
@@ -154,7 +155,8 @@ void renderFromPrompt(HWND hwnd) {
 
     try {
         const auto artifact = g_app->engine.render(intent, std::filesystem::path{"renders"});
-        g_app->organic.recordRevision(intent.project_id, utf8(request), artifact.audio_path.string());
+        g_app->organic.set_project(intent.project_id);
+        g_app->organic.remember_revision(utf8(request) + " -> " + artifact.audio_path.string());
         g_app->status = L"RENDERED: " + artifact.audio_path.wstring();
     } catch (...) {
         g_app->status = L"RENDER FAILED";
@@ -162,7 +164,7 @@ void renderFromPrompt(HWND hwnd) {
     InvalidateRect(hwnd, nullptr, FALSE);
 }
 
-LRESULT CALLBACK wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM) {
     switch (message) {
     case WM_CREATE: {
         g_app = new AppState();
@@ -178,7 +180,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
         SetTimer(hwnd, kUiTimer, kUiTimerMs, nullptr);
         return 0;
     }
-    case WM_COMMAND: {
+    case WM_COMMAND:
         switch (LOWORD(wParam)) {
         case IdOpen: {
             const auto path = chooseAudio(hwnd);
@@ -201,9 +203,10 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
         case IdRender:
             renderFromPrompt(hwnd);
             return 0;
+        default:
+            break;
         }
         break;
-    }
     case WM_TIMER:
         if (wParam == kUiTimer) InvalidateRect(hwnd, nullptr, FALSE);
         return 0;
@@ -225,14 +228,11 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
         if (g_app) drawSpectrum(dc, spectrumRect, g_app->player.currentSpectrum());
 
         RECT labels{24, 486, client.right - 24, 520};
-        std::wstring line = L"EARS: ETHERPLAYER FFT 72 // MIND: SPIRAL CORTEX + ORGANIC // HANDS: PRODUCER + RENDERER";
-        drawText(dc, line, labels, 15, true);
+        drawText(dc, L"EARS: ETHERPLAYER FFT 72 // MIND: SPIRAL CORTEX + ORGANIC // HANDS: PRODUCER + RENDERER", labels, 15, true);
 
         if (g_app) {
-            const double pos = g_app->player.positionSeconds();
-            const double dur = g_app->player.durationSeconds();
             wchar_t timing[128]{};
-            swprintf_s(timing, L"PLAYBACK %.1fs / %.1fs", pos, dur);
+            swprintf_s(timing, L"PLAYBACK %.1fs / %.1fs", g_app->player.positionSeconds(), g_app->player.durationSeconds());
             RECT timeRect{24, 526, client.right - 24, 560};
             drawText(dc, timing, timeRect, 15, false);
         }
@@ -246,13 +246,17 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
         g_app = nullptr;
         PostQuitMessage(0);
         return 0;
+    default:
+        break;
     }
-    return DefWindowProcW(hwnd, message, wParam, lParam);
+    return DefWindowProcW(hwnd, message, wParam, 0);
 }
 
 } // namespace
 
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show) {
+    if (FAILED(MFStartup(MF_VERSION))) return 1;
+
     WNDCLASSEXW wc{};
     wc.cbSize = sizeof(wc);
     wc.lpfnWndProc = wndProc;
@@ -260,12 +264,18 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show) {
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wc.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
     wc.lpszClassName = kWindowClass;
-    if (!RegisterClassExW(&wc)) return 1;
+    if (!RegisterClassExW(&wc)) {
+        MFShutdown();
+        return 1;
+    }
 
     HWND hwnd = CreateWindowExW(0, kWindowClass, L"XENON", WS_OVERLAPPEDWINDOW,
                                 CW_USEDEFAULT, CW_USEDEFAULT, 1000, 650,
                                 nullptr, nullptr, instance, nullptr);
-    if (!hwnd) return 1;
+    if (!hwnd) {
+        MFShutdown();
+        return 1;
+    }
     ShowWindow(hwnd, show);
     UpdateWindow(hwnd);
 
@@ -274,5 +284,6 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show) {
         TranslateMessage(&msg);
         DispatchMessageW(&msg);
     }
+    MFShutdown();
     return static_cast<int>(msg.wParam);
 }
