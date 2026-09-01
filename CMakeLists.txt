@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.25)
 
 project(XENON
-    VERSION 0.1.0
-    DESCRIPTION "XENON native Music Trinity engine"
+    VERSION 0.2.0
+    DESCRIPTION "XENON native music application"
     LANGUAGES CXX
 )
 
@@ -15,6 +15,10 @@ include(CTest)
 add_library(xenon_core STATIC
     src/engine.cpp
     src/wav_renderer.cpp
+    src/spectrum_analyzer.cpp
+    src/cortex.cpp
+    src/organic.cpp
+    src/producer.cpp
 )
 
 target_include_directories(xenon_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
