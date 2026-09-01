@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.25)
 
 project(XENON
-    VERSION 0.2.1
-    DESCRIPTION "XENON fused native music intelligence workstation"
+    VERSION 0.3.0
+    DESCRIPTION "XENON fused native AI music workstation"
     LANGUAGES CXX
 )
 
@@ -44,8 +44,13 @@ else()
     target_compile_options(xenon_core PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
-add_executable(XENON src/main.cpp)
-target_link_libraries(XENON PRIVATE xenon_core)
+if(WIN32)
+    add_executable(XENON WIN32 src/win32_app.cpp)
+    target_link_libraries(XENON PRIVATE xenon_core comdlg32 gdi32 user32)
+else()
+    add_executable(XENON src/main.cpp)
+    target_link_libraries(XENON PRIVATE xenon_core)
+endif()
 
 if(MSVC)
     target_compile_options(XENON PRIVATE /W4 /permissive- /utf-8)
