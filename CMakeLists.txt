@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 
 project(XENON
-    VERSION 0.3.0
+    VERSION 0.3.1
     DESCRIPTION "XENON fused native AI music workstation"
     LANGUAGES CXX
 )
@@ -21,6 +21,7 @@ add_library(xenon_core STATIC
     src/cortex.cpp
     src/organic.cpp
     src/producer.cpp
+    src/model_router.cpp
 )
 
 target_include_directories(xenon_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
@@ -62,4 +63,8 @@ if(BUILD_TESTING)
     add_executable(xenon_core_smoke tests/CoreSmoke.cpp)
     target_link_libraries(xenon_core_smoke PRIVATE xenon_core)
     add_test(NAME xenon_core_smoke COMMAND xenon_core_smoke)
+
+    add_executable(xenon_model_router_smoke tests/ModelRouterSmoke.cpp)
+    target_link_libraries(xenon_model_router_smoke PRIVATE xenon_core)
+    add_test(NAME xenon_model_router_smoke COMMAND xenon_model_router_smoke)
 endif()
