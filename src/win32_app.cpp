@@ -164,7 +164,7 @@ void renderFromPrompt(HWND hwnd) {
     InvalidateRect(hwnd, nullptr, FALSE);
 }
 
-LRESULT CALLBACK wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM) {
+LRESULT CALLBACK wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
     switch (message) {
     case WM_CREATE: {
         g_app = new AppState();
@@ -198,7 +198,12 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM) {
             return 0;
         }
         case IdPlay:
-            if (g_app->player.isPlaying()) g_app->player.pause(); else g_app->player.play();
+            try {
+                if (g_app->player.isPlaying()) g_app->player.pause();
+                else if (!g_app->current_track.empty()) g_app->player.play();
+            } catch (...) {
+                g_app->status = L"PLAYBACK ERROR";
+            }
             return 0;
         case IdRender:
             renderFromPrompt(hwnd);
@@ -249,7 +254,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM) {
     default:
         break;
     }
-    return DefWindowProcW(hwnd, message, wParam, 0);
+    return DefWindowProcW(hwnd, message, wParam, lParam);
 }
 
 } // namespace
