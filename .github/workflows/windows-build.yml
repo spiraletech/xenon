@@ -1,0 +1,40 @@
+name: Windows Build
+
+on:
+  push:
+    branches:
+      - main
+      - saelis/xenon-v0.2-hybrid-fusion
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -DBUILD_TESTING=ON
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Stage XENON
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path artifact | Out-Null
+          Copy-Item build/Release/XENON.exe artifact/XENON.exe
+
+      - name: Upload XENON.exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: XENON-windows-x64
+          path: artifact/XENON.exe
+          if-no-files-found: error
