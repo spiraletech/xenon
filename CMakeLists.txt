@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 
 project(XENON
-    VERSION 0.16.0
+    VERSION 0.17.0
     DESCRIPTION "XENON fused native AI music workstation"
     LANGUAGES CXX
 )
@@ -29,6 +29,7 @@ add_library(xenon_core STATIC
     src/ether_composer.cpp
     src/composer_agent.cpp
     src/musician_agents.cpp
+    src/realtime_jam_engine.cpp
     src/ether_dna.cpp
     src/ether_dna_store.cpp
     src/generation_pipeline.cpp
@@ -92,7 +93,8 @@ if(BUILD_TESTING)
         "synesthesia_engine_v2;SynesthesiaEngineV2Smoke.cpp"
         "etherhue_dsp;EtherHueDSPSmoke.cpp"
         "composer_agent;ComposerAgentSmoke.cpp"
-        "musician_agents;MusicianAgentsSmoke.cpp")
+        "musician_agents;MusicianAgentsSmoke.cpp"
+        "realtime_jam_engine;RealtimeJamEngineSmoke.cpp")
         list(GET test_pair 0 test_name)
         list(GET test_pair 1 test_file)
         add_executable(xenon_${test_name}_smoke tests/${test_file})
