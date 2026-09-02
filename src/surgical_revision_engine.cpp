@@ -18,6 +18,25 @@ void append_lock(ControlComponents& locks, SurgicalComponent component) {
     }
 }
 
+bool supports_direct_stem_replacement(SurgicalComponent component) {
+    switch (component) {
+    case SurgicalComponent::Drums:
+    case SurgicalComponent::Bass:
+    case SurgicalComponent::Vocals:
+    case SurgicalComponent::Melody:
+    case SurgicalComponent::Harmony:
+    case SurgicalComponent::Texture:
+        return true;
+    case SurgicalComponent::Kick:
+    case SurgicalComponent::Snare:
+    case SurgicalComponent::Hats:
+    case SurgicalComponent::Arrangement:
+    case SurgicalComponent::Unknown:
+        return false;
+    }
+    return false;
+}
+
 } // namespace
 
 ControlComponents SurgicalRevisionEngine::compile_preservation_locks(
@@ -68,6 +87,9 @@ void SurgicalRevisionEngine::validate(
     }
     if (request.source_audio.empty() && base_request.reference_audio.empty()) {
         throw std::invalid_argument("L25 surgical revision requires source audio");
+    }
+    if (!request.replacement_audio.empty() && !supports_direct_stem_replacement(request.target)) {
+        throw std::invalid_argument("L25 direct replacement requires stem-level target granularity");
     }
 }
 
@@ -120,10 +142,9 @@ SurgicalRevisionPlan SurgicalRevisionEngine::compile(
     if (request.mask.preserve_arrangement) summary << "; arrangement locked";
     plan.diff.summary = summary.str();
 
-    const auto target_stem = stem_role_for(request.target);
-    if (!request.replacement_audio.empty() && target_stem != StemRole::Unknown) {
+    if (!request.replacement_audio.empty()) {
         plan.uses_direct_stem_replacement = true;
-        plan.stem_replacement.target = target_stem;
+        plan.stem_replacement.target = stem_role_for(request.target);
         plan.stem_replacement.replacement_audio = request.replacement_audio;
         plan.stem_replacement.source_backend = "xenon.l25.direct";
     }
