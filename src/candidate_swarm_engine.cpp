@@ -31,7 +31,9 @@ CandidatePool CandidateSwarmEngine::generate_ranked(
     for (auto& generation : batch.successes) {
         try {
             const auto analysis = analyzer_.analyzeFile(generation.artifact.audio_path);
-            const auto synesthesia = synesthesia_.score(analysis);
+            SynesthesiaEngine perceptual_engine;
+            const auto perceptual_state = perceptual_engine.perceive(analysis);
+            const auto synesthesia = perceptual_engine.score(perceptual_state);
             const auto critique = critic_.critique(analysis, synesthesia);
             const std::string candidate_id = generation.route.provider_name + "#" + std::to_string(++ordinal);
 
@@ -51,6 +53,7 @@ CandidatePool CandidateSwarmEngine::generate_ranked(
             candidate.candidate_id = candidate_id;
             candidate.generation = std::move(generation);
             candidate.synesthesia = synesthesia;
+            candidate.synesthesia_state = perceptual_state;
             candidate.critique = critique;
             candidate.originality = std::move(originality);
             pool.candidates.push_back(std::move(candidate));
