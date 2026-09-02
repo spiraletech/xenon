@@ -7,12 +7,30 @@ namespace xenon {
 GenerationPipeline::GenerationPipeline(ModelRouter router)
     : router_(std::move(router)) {}
 
+void GenerationPipeline::set_music_memory(OrganicMusicMemory memory) {
+    memory_ = std::move(memory);
+}
+
+void GenerationPipeline::clear_music_memory() noexcept {
+    memory_.reset();
+}
+
+const OrganicMusicMemory* GenerationPipeline::music_memory() const noexcept {
+    return memory_ ? &*memory_ : nullptr;
+}
+
+GenerationRequest GenerationPipeline::recall(GenerationRequest request) const {
+    if (memory_) return memory_->apply_to(std::move(request));
+    return request;
+}
+
 GenerationResult GenerationPipeline::generate(
     const GenerationRequest& input,
     const std::filesystem::path& output_directory,
     const std::string& parent_fingerprint) {
 
-    const auto controlled = control_.compile(input);
+    const auto remembered = recall(input);
+    const auto controlled = control_.compile(remembered);
     const auto plan = composer_.compose(controlled.request);
     auto compiled = composer_.compile(controlled.request, plan);
 
@@ -34,7 +52,8 @@ GenerationResult GenerationPipeline::generate_evolved(
     const EtherDNARecord& parent,
     std::vector<MutationEvent> mutations) {
 
-    const auto controlled = control_.compile(input);
+    const auto remembered = recall(input);
+    const auto controlled = control_.compile(remembered);
     const auto plan = composer_.compose(controlled.request);
     auto compiled = composer_.compile(controlled.request, plan);
 
@@ -55,7 +74,8 @@ GenerationBatch GenerationPipeline::generate_candidates(
     const std::filesystem::path& output_directory,
     const std::string& parent_fingerprint) {
 
-    const auto controlled = control_.compile(input);
+    const auto remembered = recall(input);
+    const auto controlled = control_.compile(remembered);
     const auto plan = composer_.compose(controlled.request);
     auto compiled = composer_.compile(controlled.request, plan);
     const auto dna = dna_.capture(compiled, plan, parent_fingerprint);
