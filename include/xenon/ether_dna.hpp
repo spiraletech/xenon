@@ -86,6 +86,8 @@ public:
         const CompositionPlan& plan,
         std::vector<MutationEvent> mutations = {}) const;
 
+    void register_child(EtherDNARecord& parent, const EtherDNARecord& child) const;
+
     [[nodiscard]] std::string serialize(const EtherDNARecord& record) const;
 };
 
