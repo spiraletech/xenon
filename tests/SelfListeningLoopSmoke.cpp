@@ -78,14 +78,23 @@ int main() {
         return 8;
     }
 
+    if (cycle.original.generation.dna.schema_version != 2 ||
+        cycle.revision.generation.dna.schema_version != 2 ||
+        cycle.original.generation.dna.arrangement.empty() ||
+        cycle.revision.generation.dna.component_ancestry.empty() ||
+        cycle.revision.generation.dna.mutations.empty()) {
+        std::cerr << "L26 EtherDNA v2 did not propagate through self-listening revisions\n";
+        return 9;
+    }
+
     if (loop.memory().revision_notes().size() < 3) {
         std::cerr << "L21 Organic feedback memory did not record the cycle\n";
-        return 9;
+        return 10;
     }
 
     if (cycle.used_controlled_revision) {
         std::cerr << "L21 unexpectedly reported controlled revision on NativePreview\n";
-        return 10;
+        return 11;
     }
 
     fs::remove_all(output);
