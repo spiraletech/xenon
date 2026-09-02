@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 
 project(XENON
-    VERSION 0.8.0
+    VERSION 0.9.0
     DESCRIPTION "XENON fused native AI music workstation"
     LANGUAGES CXX
 )
@@ -34,6 +34,9 @@ add_library(xenon_core STATIC
     src/originality_guard.cpp
     src/candidate_ranker.cpp
     src/candidate_swarm_engine.cpp
+    src/stem_types.cpp
+    src/stem_analyzer.cpp
+    src/stem_engine.cpp
     src/backends/native_preview_backend.cpp
 )
 
@@ -104,4 +107,8 @@ if(BUILD_TESTING)
     add_executable(xenon_originality_guard_smoke tests/OriginalityGuardSmoke.cpp)
     target_link_libraries(xenon_originality_guard_smoke PRIVATE xenon_core)
     add_test(NAME xenon_originality_guard_smoke COMMAND xenon_originality_guard_smoke)
+
+    add_executable(xenon_stem_intelligence_smoke tests/StemIntelligenceSmoke.cpp)
+    target_link_libraries(xenon_stem_intelligence_smoke PRIVATE xenon_core)
+    add_test(NAME xenon_stem_intelligence_smoke COMMAND xenon_stem_intelligence_smoke)
 endif()
