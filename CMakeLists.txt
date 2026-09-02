@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 
 project(XENON
-    VERSION 0.12.0
+    VERSION 0.13.0
     DESCRIPTION "XENON fused native AI music workstation"
     LANGUAGES CXX
 )
@@ -31,6 +31,7 @@ add_library(xenon_core STATIC
     src/ether_dna_store.cpp
     src/generation_pipeline.cpp
     src/synesthesia_scorer.cpp
+    src/synesthesia_engine.cpp
     src/revision_compiler.cpp
     src/self_listening_loop.cpp
     src/originality_guard.cpp
@@ -48,15 +49,7 @@ target_include_directories(xenon_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
 target_compile_definitions(xenon_core PUBLIC XENON_VERSION="${PROJECT_VERSION}")
 
 if(WIN32)
-    target_link_libraries(xenon_core PUBLIC
-        ole32
-        oleaut32
-        mfplat
-        mfplay
-        mfreadwrite
-        mfuuid
-        propsys
-    )
+    target_link_libraries(xenon_core PUBLIC ole32 oleaut32 mfplat mfplay mfreadwrite mfuuid propsys)
 endif()
 
 if(MSVC)
@@ -80,51 +73,24 @@ else()
 endif()
 
 if(BUILD_TESTING)
-    add_executable(xenon_core_smoke tests/CoreSmoke.cpp)
-    target_link_libraries(xenon_core_smoke PRIVATE xenon_core)
-    add_test(NAME xenon_core_smoke COMMAND xenon_core_smoke)
-
-    add_executable(xenon_model_router_smoke tests/ModelRouterSmoke.cpp)
-    target_link_libraries(xenon_model_router_smoke PRIVATE xenon_core)
-    add_test(NAME xenon_model_router_smoke COMMAND xenon_model_router_smoke)
-
-    add_executable(xenon_generation_pipeline_smoke tests/GenerationPipelineSmoke.cpp)
-    target_link_libraries(xenon_generation_pipeline_smoke PRIVATE xenon_core)
-    add_test(NAME xenon_generation_pipeline_smoke COMMAND xenon_generation_pipeline_smoke)
-
-    add_executable(xenon_native_preview_backend_smoke tests/NativePreviewBackendSmoke.cpp)
-    target_link_libraries(xenon_native_preview_backend_smoke PRIVATE xenon_core)
-    add_test(NAME xenon_native_preview_backend_smoke COMMAND xenon_native_preview_backend_smoke)
-
-    add_executable(xenon_backend_policy_smoke tests/BackendPolicySmoke.cpp)
-    target_link_libraries(xenon_backend_policy_smoke PRIVATE xenon_core)
-    add_test(NAME xenon_backend_policy_smoke COMMAND xenon_backend_policy_smoke)
-
-    add_executable(xenon_self_listening_loop_smoke tests/SelfListeningLoopSmoke.cpp)
-    target_link_libraries(xenon_self_listening_loop_smoke PRIVATE xenon_core)
-    add_test(NAME xenon_self_listening_loop_smoke COMMAND xenon_self_listening_loop_smoke)
-
-    add_executable(xenon_candidate_swarm_smoke tests/CandidateSwarmSmoke.cpp)
-    target_link_libraries(xenon_candidate_swarm_smoke PRIVATE xenon_core)
-    add_test(NAME xenon_candidate_swarm_smoke COMMAND xenon_candidate_swarm_smoke)
-
-    add_executable(xenon_originality_guard_smoke tests/OriginalityGuardSmoke.cpp)
-    target_link_libraries(xenon_originality_guard_smoke PRIVATE xenon_core)
-    add_test(NAME xenon_originality_guard_smoke COMMAND xenon_originality_guard_smoke)
-
-    add_executable(xenon_stem_intelligence_smoke tests/StemIntelligenceSmoke.cpp)
-    target_link_libraries(xenon_stem_intelligence_smoke PRIVATE xenon_core)
-    add_test(NAME xenon_stem_intelligence_smoke COMMAND xenon_stem_intelligence_smoke)
-
-    add_executable(xenon_surgical_revision_smoke tests/SurgicalRevisionSmoke.cpp)
-    target_link_libraries(xenon_surgical_revision_smoke PRIVATE xenon_core)
-    add_test(NAME xenon_surgical_revision_smoke COMMAND xenon_surgical_revision_smoke)
-
-    add_executable(xenon_ether_dna_v2_smoke tests/EtherDNAV2Smoke.cpp)
-    target_link_libraries(xenon_ether_dna_v2_smoke PRIVATE xenon_core)
-    add_test(NAME xenon_ether_dna_v2_smoke COMMAND xenon_ether_dna_v2_smoke)
-
-    add_executable(xenon_organic_music_memory_smoke tests/OrganicMusicMemorySmoke.cpp)
-    target_link_libraries(xenon_organic_music_memory_smoke PRIVATE xenon_core)
-    add_test(NAME xenon_organic_music_memory_smoke COMMAND xenon_organic_music_memory_smoke)
+    foreach(test_pair
+        "core;CoreSmoke.cpp"
+        "model_router;ModelRouterSmoke.cpp"
+        "generation_pipeline;GenerationPipelineSmoke.cpp"
+        "native_preview_backend;NativePreviewBackendSmoke.cpp"
+        "backend_policy;BackendPolicySmoke.cpp"
+        "self_listening_loop;SelfListeningLoopSmoke.cpp"
+        "candidate_swarm;CandidateSwarmSmoke.cpp"
+        "originality_guard;OriginalityGuardSmoke.cpp"
+        "stem_intelligence;StemIntelligenceSmoke.cpp"
+        "surgical_revision;SurgicalRevisionSmoke.cpp"
+        "ether_dna_v2;EtherDNAV2Smoke.cpp"
+        "organic_music_memory;OrganicMusicMemorySmoke.cpp"
+        "synesthesia_engine_v2;SynesthesiaEngineV2Smoke.cpp")
+        list(GET test_pair 0 test_name)
+        list(GET test_pair 1 test_file)
+        add_executable(xenon_${test_name}_smoke tests/${test_file})
+        target_link_libraries(xenon_${test_name}_smoke PRIVATE xenon_core)
+        add_test(NAME xenon_${test_name}_smoke COMMAND xenon_${test_name}_smoke)
+    endforeach()
 endif()
