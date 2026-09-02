@@ -4,8 +4,10 @@
 #include "xenon/ether_composer.hpp"
 #include "xenon/ether_dna.hpp"
 #include "xenon/model_router.hpp"
+#include "xenon/organic_music_memory.hpp"
 
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -32,6 +34,10 @@ class GenerationPipeline {
 public:
     explicit GenerationPipeline(ModelRouter router);
 
+    void set_music_memory(OrganicMusicMemory memory);
+    void clear_music_memory() noexcept;
+    [[nodiscard]] const OrganicMusicMemory* music_memory() const noexcept;
+
     [[nodiscard]] GenerationResult generate(
         const GenerationRequest& request,
         const std::filesystem::path& output_directory,
@@ -51,10 +57,13 @@ public:
     [[nodiscard]] const ModelRouter& router() const noexcept;
 
 private:
+    [[nodiscard]] GenerationRequest recall(GenerationRequest request) const;
+
     EtherControl control_;
     EtherComposer composer_;
     EtherDNA dna_;
     ModelRouter router_;
+    std::optional<OrganicMusicMemory> memory_;
 };
 
 } // namespace xenon
