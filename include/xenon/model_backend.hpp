@@ -8,6 +8,12 @@
 
 namespace xenon {
 
+enum class RuntimeType {
+    Unknown,
+    Local,
+    RemoteApi
+};
+
 enum class ProviderCapability : std::uint32_t {
     None                = 0,
     TextToInstrumental  = 1u << 0,
@@ -52,6 +58,11 @@ public:
 
     [[nodiscard]] virtual std::string_view name() const noexcept = 0;
     [[nodiscard]] virtual ProviderCapabilities capabilities() const noexcept = 0;
+    [[nodiscard]] virtual RuntimeType runtime_type() const noexcept {
+        return has_capability(capabilities(), ProviderCapability::LocalRuntime)
+            ? RuntimeType::Local
+            : RuntimeType::Unknown;
+    }
 
     virtual GenerationArtifact generate(
         const GenerationRequest& request,
