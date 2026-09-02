@@ -10,6 +10,7 @@
 #include <mfapi.h>
 #include <mfidl.h>
 #include <mfreadwrite.h>
+#include <objbase.h>
 #endif
 
 namespace xenon {
@@ -27,6 +28,32 @@ TrackAnalysis MediaAnalyzer::analyzeFile(const std::filesystem::path& path) cons
     (void)path;
     throw std::runtime_error("XENON MediaAnalyzer currently requires Windows Media Foundation");
 #else
+    struct RuntimeGuard {
+        bool com_owned{false};
+        bool mf_started{false};
+
+        RuntimeGuard() {
+            const HRESULT co = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+            com_owned = SUCCEEDED(co);
+            if (FAILED(co) && co != RPC_E_CHANGED_MODE) {
+                throw std::runtime_error("XENON MediaAnalyzer could not initialize COM");
+            }
+
+            const HRESULT mf = MFStartup(MF_VERSION);
+            if (FAILED(mf)) {
+                if (com_owned) CoUninitialize();
+                com_owned = false;
+                throw std::runtime_error("XENON MediaAnalyzer could not initialize Media Foundation");
+            }
+            mf_started = true;
+        }
+
+        ~RuntimeGuard() {
+            if (mf_started) MFShutdown();
+            if (com_owned) CoUninitialize();
+        }
+    } runtime;
+
     IMFSourceReader* reader = nullptr;
     IMFMediaType* partial = nullptr;
     IMFMediaType* actual = nullptr;
@@ -112,7 +139,8 @@ TrackAnalysis MediaAnalyzer::analyzeFile(const std::filesystem::path& path) cons
                 BYTE* data = nullptr;
                 DWORD max_length = 0;
                 DWORD current_length = 0;
-                if (SUCCEEDED(buffer->Lock(&data, &max_length, &current_length)) && data) {
+                const HRESULT lock_hr = buffer->Lock(&data, &max_length, &current_length);
+                if (SUCCEEDED(lock_hr) && data) {
                     const auto* pcm = reinterpret_cast<const std::int16_t*>(data);
                     const std::size_t pcm_frames = current_length /
                         (sizeof(std::int16_t) * channels);
