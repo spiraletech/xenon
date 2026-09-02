@@ -67,7 +67,12 @@ std::vector<ProviderInfo> ModelRouter::providers() const {
     std::vector<ProviderInfo> result;
     result.reserve(providers_.size());
     for (const auto& slot : providers_) {
-        result.push_back(ProviderInfo{std::string{slot.backend->name()}, slot.backend->capabilities(), slot.priority});
+        result.push_back(ProviderInfo{
+            std::string{slot.backend->name()},
+            slot.backend->capabilities(),
+            slot.backend->runtime_type(),
+            slot.priority
+        });
     }
     return result;
 }
@@ -119,7 +124,8 @@ RouteDecision ModelRouter::route(const GenerationRequest& request) const {
         std::string{slot.backend->name()},
         request.render_intent,
         resolved,
-        slot.backend->capabilities()
+        slot.backend->capabilities(),
+        slot.backend->runtime_type()
     };
 }
 
