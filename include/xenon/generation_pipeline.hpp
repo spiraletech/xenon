@@ -37,6 +37,12 @@ public:
         const std::filesystem::path& output_directory,
         const std::string& parent_fingerprint = {});
 
+    [[nodiscard]] GenerationResult generate_evolved(
+        const GenerationRequest& request,
+        const std::filesystem::path& output_directory,
+        const EtherDNARecord& parent,
+        std::vector<MutationEvent> mutations = {});
+
     [[nodiscard]] GenerationBatch generate_candidates(
         const GenerationRequest& request,
         const std::filesystem::path& output_directory,
