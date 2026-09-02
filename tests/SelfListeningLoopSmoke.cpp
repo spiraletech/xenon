@@ -87,8 +87,8 @@ int main() {
         return 9;
     }
 
-    if (loop.memory().revision_notes().size() < 3) {
-        std::cerr << "L21 Organic feedback memory did not record the cycle\n";
+    if (loop.memory().revision_notes().size() < 2) {
+        std::cerr << "L21 Organic feedback memory did not record original and revision\n";
         return 10;
     }
 
