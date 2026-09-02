@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 
 project(XENON
-    VERSION 0.11.0
+    VERSION 0.12.0
     DESCRIPTION "XENON fused native AI music workstation"
     LANGUAGES CXX
 )
@@ -21,6 +21,7 @@ add_library(xenon_core STATIC
     src/cortex.cpp
     src/cortex_critic.cpp
     src/organic.cpp
+    src/organic_music_memory.cpp
     src/producer.cpp
     src/backend_policy.cpp
     src/model_router.cpp
@@ -122,4 +123,8 @@ if(BUILD_TESTING)
     add_executable(xenon_ether_dna_v2_smoke tests/EtherDNAV2Smoke.cpp)
     target_link_libraries(xenon_ether_dna_v2_smoke PRIVATE xenon_core)
     add_test(NAME xenon_ether_dna_v2_smoke COMMAND xenon_ether_dna_v2_smoke)
+
+    add_executable(xenon_organic_music_memory_smoke tests/OrganicMusicMemorySmoke.cpp)
+    target_link_libraries(xenon_organic_music_memory_smoke PRIVATE xenon_core)
+    add_test(NAME xenon_organic_music_memory_smoke COMMAND xenon_organic_music_memory_smoke)
 endif()
