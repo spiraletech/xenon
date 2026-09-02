@@ -11,9 +11,11 @@
 #include "xenon/organic.hpp"
 #include "xenon/player_engine.hpp"
 #include "xenon/producer.hpp"
+#include "xenon/spectrum_analyzer.hpp"
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <filesystem>
 #include <string>
 
@@ -32,6 +34,8 @@ enum ControlId : int {
 
 struct AppState {
     xenon::PlayerEngine player;
+    xenon::SpectrumAnalyzer spectrum_analyzer;
+    xenon::SmoothedSpectrum smoothed_spectrum;
     xenon::Cortex cortex;
     xenon::Organic organic;
     xenon::Producer producer;
@@ -76,7 +80,7 @@ void drawText(HDC dc, const std::wstring& value, RECT rect, int size, bool bold 
     DeleteObject(font);
 }
 
-void drawSpectrum(HDC dc, const RECT& rect, const xenon::SpectrumFrame& frame) {
+void drawSpectrum(HDC dc, const RECT& rect, const xenon::SmoothedSpectrum& frame) {
     HBRUSH panel = CreateSolidBrush(RGB(9, 9, 11));
     FillRect(dc, &rect, panel);
     DeleteObject(panel);
@@ -96,7 +100,6 @@ void drawSpectrum(HDC dc, const RECT& rect, const xenon::SpectrumFrame& frame) {
     SelectObject(dc, oldPen);
     DeleteObject(grid);
 
-    if (frame.bars.empty()) return;
     const int width = rect.right - rect.left;
     const int height = rect.bottom - rect.top;
     const int bars = static_cast<int>(frame.bars.size());
@@ -106,13 +109,14 @@ void drawSpectrum(HDC dc, const RECT& rect, const xenon::SpectrumFrame& frame) {
     HBRUSH peak = CreateSolidBrush(RGB(255, 232, 145));
 
     for (int i = 0; i < bars; ++i) {
-        const float value = std::clamp(frame.bars[static_cast<std::size_t>(i)], 0.0f, 1.0f);
+        const auto index = static_cast<std::size_t>(i);
+        const float value = std::clamp(std::pow(frame.bars[index], 0.80f), 0.0f, 1.0f);
         const int h = std::max(2, static_cast<int>(value * height));
         const int x = rect.left + i * (barWidth + gap);
         RECT b{x, rect.bottom - h, x + barWidth, rect.bottom};
         FillRect(dc, &b, amber);
-        const float p = i < static_cast<int>(frame.peaks.size()) ? frame.peaks[static_cast<std::size_t>(i)] : value;
-        const int py = rect.bottom - static_cast<int>(std::clamp(p, 0.0f, 1.0f) * height);
+        const float p = std::clamp(std::pow(frame.peaks[index], 0.80f), 0.0f, 1.0f);
+        const int py = rect.bottom - static_cast<int>(p * height);
         RECT pk{x, py, x + barWidth, py + 2};
         FillRect(dc, &pk, peak);
     }
@@ -213,7 +217,11 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
         }
         break;
     case WM_TIMER:
-        if (wParam == kUiTimer) InvalidateRect(hwnd, nullptr, FALSE);
+        if (wParam == kUiTimer && g_app) {
+            g_app->smoothed_spectrum = g_app->spectrum_analyzer.smooth(
+                g_app->player.currentSpectrum(), g_app->smoothed_spectrum);
+            InvalidateRect(hwnd, nullptr, FALSE);
+        }
         return 0;
     case WM_PAINT: {
         PAINTSTRUCT ps{};
@@ -230,7 +238,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
         drawText(dc, g_app ? g_app->status : L"BOOTING", status, 15, false);
 
         RECT spectrumRect{24, 158, client.right - 24, 470};
-        if (g_app) drawSpectrum(dc, spectrumRect, g_app->player.currentSpectrum());
+        if (g_app) drawSpectrum(dc, spectrumRect, g_app->smoothed_spectrum);
 
         RECT labels{24, 486, client.right - 24, 520};
         drawText(dc, L"EARS: ETHERPLAYER FFT 72 // MIND: SPIRAL CORTEX + ORGANIC // HANDS: PRODUCER + RENDERER", labels, 15, true);
