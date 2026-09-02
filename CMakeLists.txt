@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 
 project(XENON
-    VERSION 0.4.0
+    VERSION 0.4.1
     DESCRIPTION "XENON fused native AI music workstation"
     LANGUAGES CXX
 )
@@ -26,6 +26,7 @@ add_library(xenon_core STATIC
     src/ether_composer.cpp
     src/ether_dna.cpp
     src/generation_pipeline.cpp
+    src/backends/native_preview_backend.cpp
 )
 
 target_include_directories(xenon_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
@@ -75,4 +76,8 @@ if(BUILD_TESTING)
     add_executable(xenon_generation_pipeline_smoke tests/GenerationPipelineSmoke.cpp)
     target_link_libraries(xenon_generation_pipeline_smoke PRIVATE xenon_core)
     add_test(NAME xenon_generation_pipeline_smoke COMMAND xenon_generation_pipeline_smoke)
+
+    add_executable(xenon_native_preview_backend_smoke tests/NativePreviewBackendSmoke.cpp)
+    target_link_libraries(xenon_native_preview_backend_smoke PRIVATE xenon_core)
+    add_test(NAME xenon_native_preview_backend_smoke COMMAND xenon_native_preview_backend_smoke)
 endif()
