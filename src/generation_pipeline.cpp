@@ -43,6 +43,27 @@ ComposerAgentContext GenerationPipeline::composer_context() const {
     return context;
 }
 
+EnsemblePlan GenerationPipeline::conduct(
+    const GenerationRequest& request,
+    const ComposerAgentPlan& agent_plan,
+    const CompositionPlan& plan,
+    const EtherDNARecord* parent_dna,
+    const std::string& parent_fingerprint) const {
+
+    EtherDNARecord provisional;
+    const EtherDNARecord* shared_dna = parent_dna;
+    if (!shared_dna) {
+        provisional = dna_.capture(request, plan, parent_fingerprint);
+        shared_dna = &provisional;
+    }
+
+    MusicianAgentContext context;
+    context.composer_plan = &agent_plan;
+    context.dna = shared_dna;
+    context.locks = request.control.locks;
+    return musicians_.conduct(context);
+}
+
 GenerationResult GenerationPipeline::generate(
     const GenerationRequest& input,
     const std::filesystem::path& output_directory,
@@ -55,11 +76,14 @@ GenerationResult GenerationPipeline::generate(
     auto compiled = composer_agent_.compile(controlled.request, agent_plan);
     compiled = composer_.compile(compiled, plan);
 
+    const auto ensemble = conduct(compiled, agent_plan, plan, nullptr, parent_fingerprint);
+    compiled = musicians_.compile(compiled, ensemble);
+
     const auto route = router_.route(compiled);
     auto artifact = router_.generate(compiled, output_directory);
     const auto dna = dna_.capture(compiled, plan, parent_fingerprint);
 
-    return GenerationResult{std::move(artifact), plan, dna, route};
+    return GenerationResult{std::move(artifact), plan, dna, route, ensemble};
 }
 
 GenerationResult GenerationPipeline::generate_evolved(
@@ -75,11 +99,14 @@ GenerationResult GenerationPipeline::generate_evolved(
     auto compiled = composer_agent_.compile(controlled.request, agent_plan);
     compiled = composer_.compile(compiled, plan);
 
+    const auto ensemble = conduct(compiled, agent_plan, plan, &parent, parent.fingerprint);
+    compiled = musicians_.compile(compiled, ensemble);
+
     const auto route = router_.route(compiled);
     auto artifact = router_.generate(compiled, output_directory);
     const auto dna = dna_.evolve(parent, compiled, plan, std::move(mutations));
 
-    return GenerationResult{std::move(artifact), plan, dna, route};
+    return GenerationResult{std::move(artifact), plan, dna, route, ensemble};
 }
 
 GenerationBatch GenerationPipeline::generate_candidates(
@@ -93,6 +120,9 @@ GenerationBatch GenerationPipeline::generate_candidates(
     const auto plan = composer_agent_.to_composition_plan(agent_plan);
     auto compiled = composer_agent_.compile(controlled.request, agent_plan);
     compiled = composer_.compile(compiled, plan);
+
+    const auto ensemble = conduct(compiled, agent_plan, plan, nullptr, parent_fingerprint);
+    compiled = musicians_.compile(compiled, ensemble);
     const auto dna = dna_.capture(compiled, plan, parent_fingerprint);
 
     GenerationBatch batch;
@@ -102,7 +132,7 @@ GenerationBatch GenerationPipeline::generate_candidates(
 
     for (auto& attempt : attempts) {
         if (attempt.success) {
-            batch.successes.push_back(GenerationResult{std::move(attempt.artifact), plan, dna, attempt.route});
+            batch.successes.push_back(GenerationResult{std::move(attempt.artifact), plan, dna, attempt.route, ensemble});
         } else {
             batch.failures.push_back(GenerationFailure{attempt.route, std::move(attempt.error)});
         }
