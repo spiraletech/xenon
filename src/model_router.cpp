@@ -59,6 +59,14 @@ void ModelRouter::add_provider(std::unique_ptr<IModelBackend> backend, int prior
     providers_.push_back(ProviderSlot{std::move(backend), priority});
 }
 
+void ModelRouter::set_policy(BackendPolicy policy) noexcept {
+    policy_ = policy;
+}
+
+const BackendPolicy& ModelRouter::policy() const noexcept {
+    return policy_;
+}
+
 std::size_t ModelRouter::provider_count() const noexcept {
     return providers_.size();
 }
@@ -92,15 +100,16 @@ const ModelRouter::ProviderSlot& ModelRouter::select_provider(
 
     for (const auto& slot : providers_) {
         const auto caps = slot.backend->capabilities();
+        const auto runtime = slot.backend->runtime_type();
+        if (!policy_.allows(runtime)) continue;
         if (!has_capability(caps, required_mode)) continue;
         if (required_role != ProviderCapability::None && !has_capability(caps, required_role)) continue;
         if (needs_reference && !has_capability(caps, ProviderCapability::ReferenceAudio)) continue;
         if (!supports_details(caps, request)) continue;
 
-        int score = slot.priority;
+        int score = slot.priority + policy_.runtime_score(runtime);
         if (has_capability(caps, required_role)) score += 1000;
         if (needs_reference && has_capability(caps, ProviderCapability::ReferenceAudio)) score += 100;
-        if (has_capability(caps, ProviderCapability::LocalRuntime)) score += 10;
 
         if (!best || score > best_score) {
             best = &slot;
@@ -110,7 +119,7 @@ const ModelRouter::ProviderSlot& ModelRouter::select_provider(
 
     if (!best) {
         std::ostringstream error;
-        error << "No XENON backend supports the requested generation mode/control requirements";
+        error << "No XENON backend satisfies the generation requirements and runtime policy";
         throw std::runtime_error(error.str());
     }
 
