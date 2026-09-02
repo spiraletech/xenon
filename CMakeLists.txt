@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 
 project(XENON
-    VERSION 0.6.0
+    VERSION 0.6.1
     DESCRIPTION "XENON fused native AI music workstation"
     LANGUAGES CXX
 )
@@ -19,6 +19,7 @@ add_library(xenon_core STATIC
     src/media_analyzer.cpp
     src/player_engine.cpp
     src/cortex.cpp
+    src/cortex_critic.cpp
     src/organic.cpp
     src/producer.cpp
     src/backend_policy.cpp
@@ -27,6 +28,8 @@ add_library(xenon_core STATIC
     src/ether_composer.cpp
     src/ether_dna.cpp
     src/generation_pipeline.cpp
+    src/synesthesia_scorer.cpp
+    src/revision_compiler.cpp
     src/self_listening_loop.cpp
     src/backends/native_preview_backend.cpp
 )
