@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 
 project(XENON
-    VERSION 0.13.0
+    VERSION 0.14.0
     DESCRIPTION "XENON fused native AI music workstation"
     LANGUAGES CXX
 )
@@ -32,6 +32,7 @@ add_library(xenon_core STATIC
     src/generation_pipeline.cpp
     src/synesthesia_scorer.cpp
     src/synesthesia_engine.cpp
+    src/etherhue_dsp.cpp
     src/revision_compiler.cpp
     src/self_listening_loop.cpp
     src/originality_guard.cpp
@@ -86,7 +87,8 @@ if(BUILD_TESTING)
         "surgical_revision;SurgicalRevisionSmoke.cpp"
         "ether_dna_v2;EtherDNAV2Smoke.cpp"
         "organic_music_memory;OrganicMusicMemorySmoke.cpp"
-        "synesthesia_engine_v2;SynesthesiaEngineV2Smoke.cpp")
+        "synesthesia_engine_v2;SynesthesiaEngineV2Smoke.cpp"
+        "etherhue_dsp;EtherHueDSPSmoke.cpp")
         list(GET test_pair 0 test_name)
         list(GET test_pair 1 test_file)
         add_executable(xenon_${test_name}_smoke tests/${test_file})
