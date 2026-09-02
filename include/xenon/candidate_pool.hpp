@@ -3,6 +3,7 @@
 #include "xenon/cortex_critic.hpp"
 #include "xenon/generation_pipeline.hpp"
 #include "xenon/originality_guard.hpp"
+#include "xenon/synesthesia_engine.hpp"
 #include "xenon/synesthesia_scorer.hpp"
 
 #include <cstddef>
@@ -16,6 +17,7 @@ struct CandidateRecord {
     std::string candidate_id;
     GenerationResult generation;
     SynesthesiaScore synesthesia;
+    SynesthesiaState synesthesia_state;
     CortexCritique critique;
     OriginalityAssessment originality;
     double ranking_score{0.0};
