@@ -4,6 +4,7 @@
 #include "xenon/candidate_ranker.hpp"
 #include "xenon/generation_pipeline.hpp"
 #include "xenon/media_analyzer.hpp"
+#include "xenon/originality_guard.hpp"
 #include "xenon/synesthesia_scorer.hpp"
 #include "xenon/cortex_critic.hpp"
 
@@ -26,6 +27,7 @@ private:
     MediaAnalyzer analyzer_;
     SynesthesiaScorer synesthesia_;
     CortexCritic critic_;
+    OriginalityGuard originality_;
     CandidateRanker ranker_;
 };
 
