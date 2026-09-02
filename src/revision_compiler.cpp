@@ -18,6 +18,10 @@ bool contains(const std::string& haystack, const char* needle) {
     return haystack.find(needle) != std::string::npos;
 }
 
+void lock(ControlComponents& locks, ControlComponent component) {
+    locks = locks | component;
+}
+
 } // namespace
 
 GenerationRequest RevisionCompiler::compile(
@@ -40,24 +44,24 @@ GenerationRequest RevisionCompiler::compile(
     const auto normalized = lower(instruction);
 
     if (contains(normalized, "hat") || contains(normalized, "drum") || contains(normalized, "transient")) {
-        revision.control.locks |= ControlComponent::Bass;
-        revision.control.locks |= ControlComponent::Melody;
-        revision.control.locks |= ControlComponent::Harmony;
-        revision.control.locks |= ControlComponent::Texture;
-        revision.control.locks |= ControlComponent::Arrangement;
+        lock(revision.control.locks, ControlComponent::Bass);
+        lock(revision.control.locks, ControlComponent::Melody);
+        lock(revision.control.locks, ControlComponent::Harmony);
+        lock(revision.control.locks, ControlComponent::Texture);
+        lock(revision.control.locks, ControlComponent::Arrangement);
     }
 
     if (contains(normalized, "bass") && (contains(normalized, "keep") || contains(normalized, "preserve"))) {
-        revision.control.locks |= ControlComponent::Bass;
+        lock(revision.control.locks, ControlComponent::Bass);
     }
     if (contains(normalized, "melody") && (contains(normalized, "keep") || contains(normalized, "preserve"))) {
-        revision.control.locks |= ControlComponent::Melody;
+        lock(revision.control.locks, ControlComponent::Melody);
     }
     if (contains(normalized, "harmony") && (contains(normalized, "keep") || contains(normalized, "preserve"))) {
-        revision.control.locks |= ControlComponent::Harmony;
+        lock(revision.control.locks, ControlComponent::Harmony);
     }
     if (contains(normalized, "arrangement") && (contains(normalized, "keep") || contains(normalized, "preserve"))) {
-        revision.control.locks |= ControlComponent::Arrangement;
+        lock(revision.control.locks, ControlComponent::Arrangement);
     }
 
     return revision;
