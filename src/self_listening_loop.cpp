@@ -88,31 +88,39 @@ SelfListeningResult SelfListeningLoop::revise(
     const std::filesystem::path& output_directory,
     std::string user_feedback) {
 
+    const std::string feedback_note = user_feedback;
     auto revision = make_revision_request(previous_request, previous_result.critique, std::move(user_feedback));
     revision.reference_audio = previous_result.generation.artifact.audio_path;
 
-    try {
-        auto result = generate_and_listen(
-            revision,
-            output_directory,
-            previous_result.generation.dna.fingerprint);
-        remember(result, "controlled revision completed");
+    auto generate_evolved_and_listen = [&](const GenerationRequest& request, const std::string& note) {
+        SelfListeningResult result;
+        std::vector<MutationEvent> mutations;
+        mutations.push_back(MutationEvent{
+            "revision",
+            request.mutation_amount,
+            feedback_note.empty() ? previous_result.critique.revision_hint : feedback_note
+        });
+        result.generation = pipeline_.generate_evolved(
+            request, output_directory, previous_result.generation.dna, std::move(mutations));
+        if (result.generation.artifact.audio_path.empty()) {
+            throw std::runtime_error("XENON backend returned no audio artifact for evolved revision");
+        }
+        const auto analysis = analyzer_.analyzeFile(result.generation.artifact.audio_path);
+        result.critique = critique(analysis);
+        remember(result, note);
         return result;
+    };
+
+    try {
+        return generate_evolved_and_listen(revision, "controlled revision completed");
     } catch (const std::runtime_error&) {
-        // L21 must remain executable even when the current backend cannot perform
-        // reference-conditioned control. Preserve the semantic revision and DNA
-        // lineage, but degrade to a fresh local generation pass.
+        // Preserve EtherDNA inheritance even when degrading to a backend that cannot
+        // perform reference-conditioned control.
         revision.mode = GenerationMode::TextToInstrumental;
         revision.render_intent = RenderIntent::Quality;
         revision.reference_audio.clear();
         revision.control = {};
-
-        auto result = generate_and_listen(
-            revision,
-            output_directory,
-            previous_result.generation.dna.fingerprint);
-        remember(result, "revision fallback completed");
-        return result;
+        return generate_evolved_and_listen(revision, "revision fallback completed");
     }
 }
 
@@ -127,25 +135,36 @@ RevisionCycleResult SelfListeningLoop::run_revision_cycle(
 
     auto controlled = cycle.revision_request;
     controlled.reference_audio = cycle.original.generation.artifact.audio_path;
-    try {
-        cycle.revision = generate_and_listen(
-            controlled,
+
+    const std::string feedback_note = user_feedback;
+    auto generate_evolved_and_listen = [&](const GenerationRequest& revision, const std::string& note) {
+        SelfListeningResult result;
+        result.generation = pipeline_.generate_evolved(
+            revision,
             output_directory,
-            cycle.original.generation.dna.fingerprint);
+            cycle.original.generation.dna,
+            {MutationEvent{
+                "revision",
+                revision.mutation_amount,
+                feedback_note.empty() ? cycle.original.critique.revision_hint : feedback_note
+            }});
+        const auto analysis = analyzer_.analyzeFile(result.generation.artifact.audio_path);
+        result.critique = critique(analysis);
+        remember(result, note);
+        return result;
+    };
+
+    try {
+        cycle.revision = generate_evolved_and_listen(controlled, "revision cycle controlled pass");
         cycle.used_controlled_revision = true;
-        remember(cycle.revision, "revision cycle controlled pass");
     } catch (const std::runtime_error&) {
         auto fallback = cycle.revision_request;
         fallback.mode = GenerationMode::TextToInstrumental;
         fallback.render_intent = RenderIntent::Quality;
         fallback.reference_audio.clear();
         fallback.control = {};
-        cycle.revision = generate_and_listen(
-            fallback,
-            output_directory,
-            cycle.original.generation.dna.fingerprint);
+        cycle.revision = generate_evolved_and_listen(fallback, "revision cycle fallback pass");
         cycle.used_controlled_revision = false;
-        remember(cycle.revision, "revision cycle fallback pass");
     }
 
     return cycle;
