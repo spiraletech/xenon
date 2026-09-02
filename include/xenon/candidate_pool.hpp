@@ -2,6 +2,7 @@
 
 #include "xenon/cortex_critic.hpp"
 #include "xenon/generation_pipeline.hpp"
+#include "xenon/originality_guard.hpp"
 #include "xenon/synesthesia_scorer.hpp"
 
 #include <cstddef>
@@ -16,6 +17,7 @@ struct CandidateRecord {
     GenerationResult generation;
     SynesthesiaScore synesthesia;
     CortexCritique critique;
+    OriginalityAssessment originality;
     double ranking_score{0.0};
 };
 
@@ -31,11 +33,12 @@ struct CandidatePool {
     std::size_t winner_index{0};
 
     [[nodiscard]] bool has_winner() const noexcept {
-        return !candidates.empty() && winner_index < candidates.size();
+        return !candidates.empty() && winner_index < candidates.size() &&
+            !candidates[winner_index].originality.release_blocked;
     }
 
     [[nodiscard]] const CandidateRecord& winner() const {
-        if (!has_winner()) throw std::runtime_error("XENON candidate pool has no winner");
+        if (!has_winner()) throw std::runtime_error("XENON candidate pool has no releasable winner");
         return candidates[winner_index];
     }
 };
