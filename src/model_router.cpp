@@ -1,5 +1,7 @@
 #include "xenon/model_router.hpp"
 
+#include <algorithm>
+#include <cctype>
 #include <limits>
 #include <sstream>
 #include <stdexcept>
@@ -52,6 +54,15 @@ bool supports_details(ProviderCapabilities caps, const GenerationRequest& reques
     return true;
 }
 
+std::string safe_component(std::string value) {
+    for (auto& ch : value) {
+        const auto c = static_cast<unsigned char>(ch);
+        if (!std::isalnum(c) && ch != '-' && ch != '_') ch = '_';
+    }
+    if (value.empty()) value = "backend";
+    return value;
+}
+
 } // namespace
 
 void ModelRouter::add_provider(std::unique_ptr<IModelBackend> backend, int priority) {
@@ -85,13 +96,31 @@ std::vector<ProviderInfo> ModelRouter::providers() const {
     return result;
 }
 
+bool ModelRouter::eligible(
+    const ProviderSlot& slot,
+    const GenerationRequest& request,
+    RenderIntent resolved_intent) const {
+
+    const auto caps = slot.backend->capabilities();
+    const auto runtime = slot.backend->runtime_type();
+    const auto required_mode = mode_capability(request.mode);
+    const auto required_role = role_capability(resolved_intent);
+    const bool needs_reference = !request.reference_audio.empty();
+
+    if (!policy_.allows(runtime)) return false;
+    if (!has_capability(caps, required_mode)) return false;
+    if (required_role != ProviderCapability::None && !has_capability(caps, required_role)) return false;
+    if (needs_reference && !has_capability(caps, ProviderCapability::ReferenceAudio)) return false;
+    if (!supports_details(caps, request)) return false;
+    return true;
+}
+
 const ModelRouter::ProviderSlot& ModelRouter::select_provider(
     const GenerationRequest& request,
     RenderIntent resolved_intent) const {
 
     if (providers_.empty()) throw std::runtime_error("XENON has no model backends registered");
 
-    const auto required_mode = mode_capability(request.mode);
     const auto required_role = role_capability(resolved_intent);
     const bool needs_reference = !request.reference_audio.empty();
 
@@ -99,13 +128,9 @@ const ModelRouter::ProviderSlot& ModelRouter::select_provider(
     int best_score = std::numeric_limits<int>::min();
 
     for (const auto& slot : providers_) {
+        if (!eligible(slot, request, resolved_intent)) continue;
         const auto caps = slot.backend->capabilities();
         const auto runtime = slot.backend->runtime_type();
-        if (!policy_.allows(runtime)) continue;
-        if (!has_capability(caps, required_mode)) continue;
-        if (required_role != ProviderCapability::None && !has_capability(caps, required_role)) continue;
-        if (needs_reference && !has_capability(caps, ProviderCapability::ReferenceAudio)) continue;
-        if (!supports_details(caps, request)) continue;
 
         int score = slot.priority + policy_.runtime_score(runtime);
         if (has_capability(caps, required_role)) score += 1000;
@@ -149,6 +174,48 @@ GenerationArtifact ModelRouter::generate(
     const auto resolved = resolve_intent(request);
     const auto& slot = select_provider(request, resolved);
     return slot.backend->generate(request, output_directory);
+}
+
+std::vector<BackendGenerationAttempt> ModelRouter::generate_all(
+    const GenerationRequest& request,
+    const std::filesystem::path& output_directory) {
+
+    if (request.prompt.empty()) throw std::invalid_argument("Generation prompt cannot be empty");
+    if (request.duration_seconds <= 0.0 || request.duration_seconds > 600.0)
+        throw std::invalid_argument("Generation duration must be within (0, 600] seconds");
+
+    const auto resolved = resolve_intent(request);
+    std::vector<BackendGenerationAttempt> attempts;
+
+    for (auto& slot : providers_) {
+        if (!eligible(slot, request, resolved)) continue;
+
+        BackendGenerationAttempt attempt;
+        attempt.route = RouteDecision{
+            std::string{slot.backend->name()},
+            request.render_intent,
+            resolved,
+            slot.backend->capabilities(),
+            slot.backend->runtime_type()
+        };
+
+        try {
+            const auto provider_dir = output_directory / safe_component(attempt.route.provider_name);
+            attempt.artifact = slot.backend->generate(request, provider_dir);
+            attempt.success = true;
+        } catch (const std::exception& ex) {
+            attempt.error = ex.what();
+        } catch (...) {
+            attempt.error = "unknown backend generation failure";
+        }
+        attempts.push_back(std::move(attempt));
+    }
+
+    if (attempts.empty()) {
+        throw std::runtime_error("No XENON backend is eligible for candidate fan-out");
+    }
+
+    return attempts;
 }
 
 } // namespace xenon
