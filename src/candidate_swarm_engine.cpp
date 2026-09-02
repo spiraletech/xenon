@@ -1,0 +1,64 @@
+#include "xenon/candidate_swarm_engine.hpp"
+
+#include <stdexcept>
+#include <utility>
+
+namespace xenon {
+
+CandidateSwarmEngine::CandidateSwarmEngine(GenerationPipeline pipeline)
+    : pipeline_(std::move(pipeline)) {}
+
+CandidatePool CandidateSwarmEngine::generate_ranked(
+    const GenerationRequest& request,
+    const std::filesystem::path& output_directory,
+    const std::string& parent_fingerprint) {
+
+    auto batch = pipeline_.generate_candidates(request, output_directory, parent_fingerprint);
+    CandidatePool pool;
+    pool.failures.reserve(batch.failures.size());
+
+    for (auto& failure : batch.failures) {
+        pool.failures.push_back(CandidateFailure{
+            failure.route,
+            "generation",
+            std::move(failure.error)
+        });
+    }
+
+    std::size_t ordinal = 0;
+    for (auto& generation : batch.successes) {
+        try {
+            const auto analysis = analyzer_.analyzeFile(generation.artifact.audio_path);
+            const auto synesthesia = synesthesia_.score(analysis);
+            const auto critique = critic_.critique(analysis, synesthesia);
+
+            CandidateRecord candidate;
+            candidate.candidate_id = generation.route.provider_name + "#" + std::to_string(++ordinal);
+            candidate.generation = std::move(generation);
+            candidate.synesthesia = synesthesia;
+            candidate.critique = critique;
+            pool.candidates.push_back(std::move(candidate));
+        } catch (const std::exception& ex) {
+            pool.failures.push_back(CandidateFailure{
+                generation.route,
+                "evaluation",
+                ex.what()
+            });
+        } catch (...) {
+            pool.failures.push_back(CandidateFailure{
+                generation.route,
+                "evaluation",
+                "unknown candidate evaluation failure"
+            });
+        }
+    }
+
+    if (pool.candidates.empty()) {
+        throw std::runtime_error("XENON candidate swarm produced no evaluable candidates");
+    }
+
+    ranker_.rank(pool);
+    return pool;
+}
+
+} // namespace xenon
