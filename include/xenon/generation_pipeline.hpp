@@ -1,5 +1,6 @@
 #pragma once
 
+#include "xenon/composer_agent.hpp"
 #include "xenon/ether_control.hpp"
 #include "xenon/ether_composer.hpp"
 #include "xenon/ether_dna.hpp"
@@ -38,6 +39,10 @@ public:
     void clear_music_memory() noexcept;
     [[nodiscard]] const OrganicMusicMemory* music_memory() const noexcept;
 
+    void set_composer_perceptual_target(SynesthesiaState state);
+    void clear_composer_perceptual_target() noexcept;
+    [[nodiscard]] const SynesthesiaState* composer_perceptual_target() const noexcept;
+
     [[nodiscard]] GenerationResult generate(
         const GenerationRequest& request,
         const std::filesystem::path& output_directory,
@@ -58,12 +63,15 @@ public:
 
 private:
     [[nodiscard]] GenerationRequest recall(GenerationRequest request) const;
+    [[nodiscard]] ComposerAgentContext composer_context() const;
 
     EtherControl control_;
     EtherComposer composer_;
+    ComposerAgent composer_agent_;
     EtherDNA dna_;
     ModelRouter router_;
     std::optional<OrganicMusicMemory> memory_;
+    std::optional<SynesthesiaState> composer_target_;
 };
 
 } // namespace xenon
