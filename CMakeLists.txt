@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 
 project(XENON
-    VERSION 0.4.1
+    VERSION 0.5.0
     DESCRIPTION "XENON fused native AI music workstation"
     LANGUAGES CXX
 )
@@ -21,6 +21,7 @@ add_library(xenon_core STATIC
     src/cortex.cpp
     src/organic.cpp
     src/producer.cpp
+    src/backend_policy.cpp
     src/model_router.cpp
     src/ether_control.cpp
     src/ether_composer.cpp
@@ -80,4 +81,8 @@ if(BUILD_TESTING)
     add_executable(xenon_native_preview_backend_smoke tests/NativePreviewBackendSmoke.cpp)
     target_link_libraries(xenon_native_preview_backend_smoke PRIVATE xenon_core)
     add_test(NAME xenon_native_preview_backend_smoke COMMAND xenon_native_preview_backend_smoke)
+
+    add_executable(xenon_backend_policy_smoke tests/BackendPolicySmoke.cpp)
+    target_link_libraries(xenon_backend_policy_smoke PRIVATE xenon_core)
+    add_test(NAME xenon_backend_policy_smoke COMMAND xenon_backend_policy_smoke)
 endif()
