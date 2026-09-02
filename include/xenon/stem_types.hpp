@@ -21,6 +21,7 @@ enum class StemRole {
 };
 
 [[nodiscard]] const char* stem_role_name(StemRole role) noexcept;
+[[nodiscard]] ControlComponent stem_role_control_component(StemRole role) noexcept;
 
 struct StemAnalysis {
     double rms{0.0};
