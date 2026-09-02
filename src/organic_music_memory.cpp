@@ -48,14 +48,21 @@ std::vector<std::string> split(const std::string& line, char delimiter = '|') {
     return parts;
 }
 
-int verdict_value(MemoryVerdict verdict) {
-    return static_cast<int>(verdict);
-}
+int verdict_value(MemoryVerdict verdict) { return static_cast<int>(verdict); }
 
 MemoryVerdict verdict_from(int value) {
     if (value == 1) return MemoryVerdict::Accepted;
     if (value == 2) return MemoryVerdict::Rejected;
     return MemoryVerdict::Neutral;
+}
+
+const char* verdict_name(MemoryVerdict verdict) {
+    switch (verdict) {
+    case MemoryVerdict::Accepted: return "accepted";
+    case MemoryVerdict::Rejected: return "rejected";
+    case MemoryVerdict::Neutral: return "neutral";
+    }
+    return "neutral";
 }
 
 } // namespace
@@ -128,8 +135,17 @@ std::vector<std::string> OrganicMusicMemory::recall_context(std::size_t max_item
         add("prefer: " + it->text);
     for (auto it = memory_.rejections.rbegin(); it != memory_.rejections.rend() && out.size() < max_items; ++it)
         add("avoid: " + it->text);
+    for (auto it = memory_.numeric_preferences.rbegin(); it != memory_.numeric_preferences.rend() && out.size() < max_items; ++it) {
+        std::ostringstream item;
+        item << "target " << it->key << '=' << it->value << " confidence=" << it->confidence;
+        add(item.str());
+    }
     for (auto it = memory_.protected_motifs.rbegin(); it != memory_.protected_motifs.rend() && out.size() < max_items; ++it)
         add("protect motif " + it->motif_id + ": " + it->description);
+    for (auto it = memory_.revisions.rbegin(); it != memory_.revisions.rend() && out.size() < max_items; ++it) {
+        if (it->verdict == MemoryVerdict::Neutral) continue;
+        add(std::string{"revision "} + verdict_name(it->verdict) + ": " + it->note);
+    }
     return out;
 }
 
@@ -145,7 +161,7 @@ GenerationRequest OrganicMusicMemory::apply_to(GenerationRequest request) const 
             + reference->value * reference->confidence;
     }
 
-    const auto context = recall_context(8);
+    const auto context = recall_context(12);
     if (!context.empty()) {
         request.prompt += ". ORGANIC project memory: ";
         for (std::size_t i = 0; i < context.size(); ++i) {
