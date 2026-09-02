@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 
 project(XENON
-    VERSION 0.6.1
+    VERSION 0.7.0
     DESCRIPTION "XENON fused native AI music workstation"
     LANGUAGES CXX
 )
@@ -31,6 +31,8 @@ add_library(xenon_core STATIC
     src/synesthesia_scorer.cpp
     src/revision_compiler.cpp
     src/self_listening_loop.cpp
+    src/candidate_ranker.cpp
+    src/candidate_swarm_engine.cpp
     src/backends/native_preview_backend.cpp
 )
 
@@ -93,4 +95,8 @@ if(BUILD_TESTING)
     add_executable(xenon_self_listening_loop_smoke tests/SelfListeningLoopSmoke.cpp)
     target_link_libraries(xenon_self_listening_loop_smoke PRIVATE xenon_core)
     add_test(NAME xenon_self_listening_loop_smoke COMMAND xenon_self_listening_loop_smoke)
+
+    add_executable(xenon_candidate_swarm_smoke tests/CandidateSwarmSmoke.cpp)
+    target_link_libraries(xenon_candidate_swarm_smoke PRIVATE xenon_core)
+    add_test(NAME xenon_candidate_swarm_smoke COMMAND xenon_candidate_swarm_smoke)
 endif()
