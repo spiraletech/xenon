@@ -121,7 +121,6 @@ EtherDNARecord EtherDNA::evolve(
 
     auto child = capture(request, plan, parent.fingerprint);
 
-    // Locked genes inherit the parent's musical identity rather than being re-derived.
     if (has_control_component(request.control.locks, ControlComponent::Drums)) {
         child.rhythm = parent.rhythm;
     }
@@ -138,11 +137,21 @@ EtherDNARecord EtherDNA::evolve(
 
     child.component_ancestry.clear();
     append_component_ancestry(child, parent.fingerprint);
-    child.mutations = std::move(mutations);
-    if (child.mutations.empty()) {
-        child.mutations.push_back(MutationEvent{"generation", plan.mutation_amount, "evolved from parent EtherDNA"});
+
+    child.mutations = parent.mutations;
+    if (mutations.empty()) {
+        mutations.push_back(MutationEvent{"generation", plan.mutation_amount, "evolved from parent EtherDNA"});
     }
+    child.mutations.insert(child.mutations.end(), mutations.begin(), mutations.end());
     return child;
+}
+
+void EtherDNA::register_child(EtherDNARecord& parent, const EtherDNARecord& child) const {
+    if (child.parent_fingerprint != parent.fingerprint) return;
+    if (std::find(parent.child_fingerprints.begin(), parent.child_fingerprints.end(), child.fingerprint)
+        == parent.child_fingerprints.end()) {
+        parent.child_fingerprints.push_back(child.fingerprint);
+    }
 }
 
 std::string EtherDNA::serialize(const EtherDNARecord& record) const {
