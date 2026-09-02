@@ -28,6 +28,28 @@ GenerationResult GenerationPipeline::generate(
     };
 }
 
+GenerationResult GenerationPipeline::generate_evolved(
+    const GenerationRequest& input,
+    const std::filesystem::path& output_directory,
+    const EtherDNARecord& parent,
+    std::vector<MutationEvent> mutations) {
+
+    const auto controlled = control_.compile(input);
+    const auto plan = composer_.compose(controlled.request);
+    auto compiled = composer_.compile(controlled.request, plan);
+
+    const auto route = router_.route(compiled);
+    auto artifact = router_.generate(compiled, output_directory);
+    const auto dna = dna_.evolve(parent, compiled, plan, std::move(mutations));
+
+    return GenerationResult{
+        std::move(artifact),
+        plan,
+        dna,
+        route
+    };
+}
+
 GenerationBatch GenerationPipeline::generate_candidates(
     const GenerationRequest& input,
     const std::filesystem::path& output_directory,
