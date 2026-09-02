@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 #include <utility>
+#include <vector>
 
 namespace xenon {
 
@@ -25,18 +26,33 @@ CandidatePool CandidateSwarmEngine::generate_ranked(
         });
     }
 
+    std::vector<std::pair<std::string, AudioFingerprint>> prior_fingerprints;
     std::size_t ordinal = 0;
     for (auto& generation : batch.successes) {
         try {
             const auto analysis = analyzer_.analyzeFile(generation.artifact.audio_path);
             const auto synesthesia = synesthesia_.score(analysis);
             const auto critique = critic_.critique(analysis, synesthesia);
+            const std::string candidate_id = generation.route.provider_name + "#" + std::to_string(++ordinal);
+
+            auto originality = originality_.assess(
+                candidate_id,
+                generation.route.provider_name,
+                generation.dna.fingerprint,
+                generation.dna.parent_fingerprint,
+                generation.artifact.resolved_seed,
+                generation.artifact.audio_path,
+                analysis,
+                prior_fingerprints);
+
+            prior_fingerprints.emplace_back(candidate_id, originality.fingerprint);
 
             CandidateRecord candidate;
-            candidate.candidate_id = generation.route.provider_name + "#" + std::to_string(++ordinal);
+            candidate.candidate_id = candidate_id;
             candidate.generation = std::move(generation);
             candidate.synesthesia = synesthesia;
             candidate.critique = critique;
+            candidate.originality = std::move(originality);
             pool.candidates.push_back(std::move(candidate));
         } catch (const std::exception& ex) {
             pool.failures.push_back(CandidateFailure{
@@ -58,6 +74,9 @@ CandidatePool CandidateSwarmEngine::generate_ranked(
     }
 
     ranker_.rank(pool);
+    if (!pool.has_winner()) {
+        throw std::runtime_error("XENON originality guard blocked every candidate from release selection");
+    }
     return pool;
 }
 
