@@ -12,6 +12,7 @@ namespace xenon {
 struct ProviderInfo {
     std::string name;
     ProviderCapabilities capabilities{0};
+    RuntimeType runtime{RuntimeType::Unknown};
     int priority{0};
 };
 
@@ -20,6 +21,7 @@ struct RouteDecision {
     RenderIntent requested_intent{RenderIntent::Auto};
     RenderIntent resolved_intent{RenderIntent::Quality};
     ProviderCapabilities capabilities{0};
+    RuntimeType runtime{RuntimeType::Unknown};
 };
 
 class ModelRouter {
