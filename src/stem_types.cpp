@@ -15,4 +15,18 @@ const char* stem_role_name(StemRole role) noexcept {
     return "unknown";
 }
 
+ControlComponent stem_role_control_component(StemRole role) noexcept {
+    switch (role) {
+    case StemRole::Drums: return ControlComponent::Drums;
+    case StemRole::Bass: return ControlComponent::Bass;
+    case StemRole::Melody: return ControlComponent::Melody;
+    case StemRole::Harmony: return ControlComponent::Harmony;
+    case StemRole::Texture: return ControlComponent::Texture;
+    case StemRole::Vocals:
+    case StemRole::Unknown:
+        return ControlComponent::None;
+    }
+    return ControlComponent::None;
+}
+
 } // namespace xenon
