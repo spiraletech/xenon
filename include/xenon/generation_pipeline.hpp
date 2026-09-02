@@ -5,6 +5,7 @@
 #include "xenon/ether_composer.hpp"
 #include "xenon/ether_dna.hpp"
 #include "xenon/model_router.hpp"
+#include "xenon/musician_agents.hpp"
 #include "xenon/organic_music_memory.hpp"
 
 #include <filesystem>
@@ -19,6 +20,7 @@ struct GenerationResult {
     CompositionPlan plan;
     EtherDNARecord dna;
     RouteDecision route;
+    EnsemblePlan ensemble;
 };
 
 struct GenerationFailure {
@@ -64,10 +66,17 @@ public:
 private:
     [[nodiscard]] GenerationRequest recall(GenerationRequest request) const;
     [[nodiscard]] ComposerAgentContext composer_context() const;
+    [[nodiscard]] EnsemblePlan conduct(
+        const GenerationRequest& request,
+        const ComposerAgentPlan& agent_plan,
+        const CompositionPlan& plan,
+        const EtherDNARecord* parent_dna,
+        const std::string& parent_fingerprint) const;
 
     EtherControl control_;
     EtherComposer composer_;
     ComposerAgent composer_agent_;
+    MusicianEnsemble musicians_;
     EtherDNA dna_;
     ModelRouter router_;
     std::optional<OrganicMusicMemory> memory_;
