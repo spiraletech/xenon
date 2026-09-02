@@ -25,6 +25,13 @@ struct RouteDecision {
     RuntimeType runtime{RuntimeType::Unknown};
 };
 
+struct BackendGenerationAttempt {
+    RouteDecision route;
+    GenerationArtifact artifact;
+    bool success{false};
+    std::string error;
+};
+
 class ModelRouter {
 public:
     void add_provider(std::unique_ptr<IModelBackend> backend, int priority = 0);
@@ -40,6 +47,10 @@ public:
         const GenerationRequest& request,
         const std::filesystem::path& output_directory);
 
+    [[nodiscard]] std::vector<BackendGenerationAttempt> generate_all(
+        const GenerationRequest& request,
+        const std::filesystem::path& output_directory);
+
 private:
     struct ProviderSlot {
         std::unique_ptr<IModelBackend> backend;
@@ -47,6 +58,11 @@ private:
     };
 
     [[nodiscard]] const ProviderSlot& select_provider(
+        const GenerationRequest& request,
+        RenderIntent resolved_intent) const;
+
+    [[nodiscard]] bool eligible(
+        const ProviderSlot& slot,
         const GenerationRequest& request,
         RenderIntent resolved_intent) const;
 
