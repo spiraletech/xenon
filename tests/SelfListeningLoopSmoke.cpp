@@ -1,3 +1,4 @@
+#include "xenon/backend_policy.hpp"
 #include "xenon/backends/native_preview_backend.hpp"
 #include "xenon/generation_pipeline.hpp"
 #include "xenon/model_router.hpp"
@@ -12,7 +13,7 @@ int main() {
 
     xenon::ModelRouter router;
     router.add_provider(std::make_unique<xenon::NativePreviewBackend>(), 100);
-    router.set_backend_policy(xenon::BackendPolicy{xenon::RuntimePolicy::LocalOnly});
+    router.set_policy(xenon::BackendPolicy{{xenon::RuntimePreference::LocalOnly, 100, 100}});
 
     xenon::SelfListeningLoop loop{xenon::GenerationPipeline{std::move(router)}};
 
@@ -82,8 +83,6 @@ int main() {
         return 9;
     }
 
-    // NativePreview has no reference-conditioned variation capability, so this
-    // test also proves L21's capability-aware fallback keeps the loop executable.
     if (cycle.used_controlled_revision) {
         std::cerr << "L21 unexpectedly reported controlled revision on NativePreview\n";
         return 10;
