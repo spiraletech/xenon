@@ -7,6 +7,7 @@
 
 #include <filesystem>
 #include <string>
+#include <vector>
 
 namespace xenon {
 
@@ -17,11 +18,26 @@ struct GenerationResult {
     RouteDecision route;
 };
 
+struct GenerationFailure {
+    RouteDecision route;
+    std::string error;
+};
+
+struct GenerationBatch {
+    std::vector<GenerationResult> successes;
+    std::vector<GenerationFailure> failures;
+};
+
 class GenerationPipeline {
 public:
     explicit GenerationPipeline(ModelRouter router);
 
     [[nodiscard]] GenerationResult generate(
+        const GenerationRequest& request,
+        const std::filesystem::path& output_directory,
+        const std::string& parent_fingerprint = {});
+
+    [[nodiscard]] GenerationBatch generate_candidates(
         const GenerationRequest& request,
         const std::filesystem::path& output_directory,
         const std::string& parent_fingerprint = {});
