@@ -3,8 +3,10 @@
 #include "xenon/media_analyzer.hpp"
 
 #include <array>
+#include <cstdint>
 #include <filesystem>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace xenon {
