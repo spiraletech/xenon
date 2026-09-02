@@ -1,5 +1,6 @@
 #pragma once
 
+#include "xenon/backend_policy.hpp"
 #include "xenon/model_backend.hpp"
 
 #include <cstddef>
@@ -28,6 +29,9 @@ class ModelRouter {
 public:
     void add_provider(std::unique_ptr<IModelBackend> backend, int priority = 0);
 
+    void set_policy(BackendPolicy policy) noexcept;
+    [[nodiscard]] const BackendPolicy& policy() const noexcept;
+
     [[nodiscard]] std::size_t provider_count() const noexcept;
     [[nodiscard]] std::vector<ProviderInfo> providers() const;
     [[nodiscard]] RouteDecision route(const GenerationRequest& request) const;
@@ -46,6 +50,7 @@ private:
         const GenerationRequest& request,
         RenderIntent resolved_intent) const;
 
+    BackendPolicy policy_{};
     std::vector<ProviderSlot> providers_;
 };
 
