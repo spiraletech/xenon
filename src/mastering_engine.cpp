@@ -75,6 +75,7 @@ MasteringMetrics MasteringEngine::analyze(std::span<const float> stereo) const {
     validate_audio(stereo);
     MasteringMetrics m;
     double sum_sq = 0.0;
+    double sum_abs = 0.0;
     double sum_diff = 0.0;
     double motion = 0.0;
     double prev_mono = 0.0;
@@ -86,6 +87,7 @@ MasteringMetrics MasteringEngine::analyze(std::span<const float> stereo) const {
         const double r = stereo[i + 1];
         const double mono = 0.5 * (l + r);
         sum_sq += mono * mono;
+        sum_abs += std::abs(mono);
         sum_diff += std::abs(l - r);
         motion += std::abs(mono - prev_mono);
         prev_mono = mono;
@@ -108,7 +110,8 @@ MasteringMetrics MasteringEngine::analyze(std::span<const float> stereo) const {
     m.loudness_lufs_estimate = gain_to_db(m.rms) - 0.691;
     m.sample_peak_dbfs = gain_to_db(peak);
     m.oversampled_peak_dbfs = gain_to_db(std::max(peak, over_peak));
-    m.brightness = clamp01((motion / std::max(1.0, frames)) * 4.0);
+    // Level-invariant tonal-motion proxy: normalize sample-to-sample motion by program magnitude.
+    m.brightness = clamp01((motion / std::max(sum_abs, kEps)) * 12.0);
     m.stereo_width = clamp01((sum_diff / std::max(1.0, frames)) * 2.0);
     return m;
 }
