@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 
 project(XENON
-    VERSION 0.22.0
+    VERSION 0.23.0
     DESCRIPTION "XENON fused native AI music workstation"
     LANGUAGES CXX
 )
@@ -36,6 +36,7 @@ add_library(xenon_core STATIC
     src/mastering_engine.cpp
     src/project_graph.cpp
     src/session_os.cpp
+    src/trinity_device_bus.cpp
     src/ether_dna.cpp
     src/ether_dna_store.cpp
     src/generation_pipeline.cpp
@@ -105,7 +106,8 @@ if(BUILD_TESTING)
         "midi_intelligence;MidiIntelligenceSmoke.cpp"
         "mix_engine;MixEngineSmoke.cpp"
         "mastering_engine;MasteringEngineSmoke.cpp"
-        "project_graph;ProjectGraphSmoke.cpp")
+        "project_graph;ProjectGraphSmoke.cpp"
+        "trinity_device_bus;TrinityDeviceBusSmoke.cpp")
         list(GET test_pair 0 test_name)
         list(GET test_pair 1 test_file)
         add_executable(xenon_${test_name}_smoke tests/${test_file})
