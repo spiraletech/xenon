@@ -14,73 +14,22 @@
 #include <vector>
 
 namespace xenon {
-
-struct GenerationResult {
-    GenerationArtifact artifact;
-    CompositionPlan plan;
-    EtherDNARecord dna;
-    RouteDecision route;
-    EnsemblePlan ensemble;
-};
-
-struct GenerationFailure {
-    RouteDecision route;
-    std::string error;
-};
-
-struct GenerationBatch {
-    std::vector<GenerationResult> successes;
-    std::vector<GenerationFailure> failures;
-};
-
+struct GenerationResult { GenerationArtifact artifact; CompositionPlan plan; EtherDNARecord dna; RouteDecision route; EnsemblePlan ensemble; };
+struct GenerationFailure { RouteDecision route; std::string error; };
+struct GenerationBatch { std::vector<GenerationResult> successes; std::vector<GenerationFailure> failures; };
 class GenerationPipeline {
 public:
-    explicit GenerationPipeline(ModelRouter router);
-
-    void set_music_memory(OrganicMusicMemory memory);
-    void clear_music_memory() noexcept;
-    [[nodiscard]] const OrganicMusicMemory* music_memory() const noexcept;
-
-    void set_composer_perceptual_target(SynesthesiaState state);
-    void clear_composer_perceptual_target() noexcept;
-    [[nodiscard]] const SynesthesiaState* composer_perceptual_target() const noexcept;
-
-    [[nodiscard]] GenerationResult generate(
-        const GenerationRequest& request,
-        const std::filesystem::path& output_directory,
-        const std::string& parent_fingerprint = {});
-
-    [[nodiscard]] GenerationResult generate_evolved(
-        const GenerationRequest& request,
-        const std::filesystem::path& output_directory,
-        const EtherDNARecord& parent,
-        std::vector<MutationEvent> mutations = {});
-
-    [[nodiscard]] GenerationBatch generate_candidates(
-        const GenerationRequest& request,
-        const std::filesystem::path& output_directory,
-        const std::string& parent_fingerprint = {});
-
-    [[nodiscard]] const ModelRouter& router() const noexcept;
-
+ explicit GenerationPipeline(ModelRouter router);
+ void set_music_memory(OrganicMusicMemory memory); void clear_music_memory() noexcept; [[nodiscard]] const OrganicMusicMemory* music_memory() const noexcept;
+ void set_composer_perceptual_target(SynesthesiaState state); void clear_composer_perceptual_target() noexcept; [[nodiscard]] const SynesthesiaState* composer_perceptual_target() const noexcept;
+ [[nodiscard]] GenerationResult generate(const GenerationRequest&,const std::filesystem::path&,const std::string& parent_fingerprint={});
+ [[nodiscard]] GenerationResult generate_evolved(const GenerationRequest&,const std::filesystem::path&,const EtherDNARecord&,std::vector<MutationEvent> mutations={});
+ [[nodiscard]] GenerationBatch generate_candidates(const GenerationRequest&,const std::filesystem::path&,const std::string& parent_fingerprint={});
+ [[nodiscard]] const ModelRouter& router() const noexcept;
+ [[nodiscard]] ModelRouter& mutable_router() noexcept;
 private:
-    [[nodiscard]] GenerationRequest recall(GenerationRequest request) const;
-    [[nodiscard]] ComposerAgentContext composer_context() const;
-    [[nodiscard]] EnsemblePlan conduct(
-        const GenerationRequest& request,
-        const ComposerAgentPlan& agent_plan,
-        const CompositionPlan& plan,
-        const EtherDNARecord* parent_dna,
-        const std::string& parent_fingerprint) const;
-
-    EtherControl control_;
-    EtherComposer composer_;
-    ComposerAgent composer_agent_;
-    MusicianEnsemble musicians_;
-    EtherDNA dna_;
-    ModelRouter router_;
-    std::optional<OrganicMusicMemory> memory_;
-    std::optional<SynesthesiaState> composer_target_;
+ [[nodiscard]] GenerationRequest recall(GenerationRequest request) const; [[nodiscard]] ComposerAgentContext composer_context() const;
+ [[nodiscard]] EnsemblePlan conduct(const GenerationRequest&,const ComposerAgentPlan&,const CompositionPlan&,const EtherDNARecord*,const std::string&) const;
+ EtherControl control_; EtherComposer composer_; ComposerAgent composer_agent_; MusicianEnsemble musicians_; EtherDNA dna_; ModelRouter router_; std::optional<OrganicMusicMemory> memory_; std::optional<SynesthesiaState> composer_target_;
 };
-
 } // namespace xenon
