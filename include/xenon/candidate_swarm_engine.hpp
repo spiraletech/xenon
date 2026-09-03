@@ -22,6 +22,8 @@ public:
         const std::filesystem::path& output_directory,
         const std::string& parent_fingerprint = {});
 
+    [[nodiscard]] GenerationPipeline release_pipeline() && noexcept { return std::move(pipeline_); }
+
 private:
     GenerationPipeline pipeline_;
     MediaAnalyzer analyzer_;
