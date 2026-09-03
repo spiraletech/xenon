@@ -1,117 +1,40 @@
 cmake_minimum_required(VERSION 3.25)
-
-project(XENON
-    VERSION 0.23.0
-    DESCRIPTION "XENON fused native AI music workstation"
-    LANGUAGES CXX
-)
-
+project(XENON VERSION 0.24.0 DESCRIPTION "XENON fused native AI music workstation" LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-
 include(CTest)
-
 add_library(xenon_core STATIC
-    src/engine.cpp
-    src/wav_renderer.cpp
-    src/spectrum_analyzer.cpp
-    src/media_analyzer.cpp
-    src/player_engine.cpp
-    src/cortex.cpp
-    src/cortex_critic.cpp
-    src/organic.cpp
-    src/organic_music_memory.cpp
-    src/producer.cpp
-    src/backend_policy.cpp
-    src/model_router.cpp
-    src/ether_control.cpp
-    src/ether_composer.cpp
-    src/composer_agent.cpp
-    src/musician_agents.cpp
-    src/realtime_jam_engine.cpp
-    src/vst_host.cpp
-    src/midi_intelligence.cpp
-    src/mix_engine.cpp
-    src/mastering_engine.cpp
-    src/project_graph.cpp
-    src/session_os.cpp
-    src/trinity_device_bus.cpp
-    src/ether_dna.cpp
-    src/ether_dna_store.cpp
-    src/generation_pipeline.cpp
-    src/synesthesia_scorer.cpp
-    src/synesthesia_engine.cpp
-    src/etherhue_dsp.cpp
-    src/revision_compiler.cpp
-    src/self_listening_loop.cpp
-    src/originality_guard.cpp
-    src/candidate_ranker.cpp
-    src/candidate_swarm_engine.cpp
-    src/stem_types.cpp
-    src/stem_analyzer.cpp
-    src/stem_engine.cpp
-    src/surgical_revision.cpp
-    src/surgical_revision_engine.cpp
-    src/backends/native_preview_backend.cpp
-)
-
+    src/engine.cpp src/wav_renderer.cpp src/spectrum_analyzer.cpp src/media_analyzer.cpp src/player_engine.cpp src/cortex.cpp src/cortex_critic.cpp src/organic.cpp src/organic_music_memory.cpp src/producer.cpp src/backend_policy.cpp src/model_router.cpp src/ether_control.cpp src/ether_composer.cpp src/composer_agent.cpp src/musician_agents.cpp src/realtime_jam_engine.cpp src/vst_host.cpp src/midi_intelligence.cpp src/mix_engine.cpp src/mastering_engine.cpp src/project_graph.cpp src/session_os.cpp src/trinity_device_bus.cpp src/autonomous_producer.cpp src/ether_dna.cpp src/ether_dna_store.cpp src/generation_pipeline.cpp src/synesthesia_scorer.cpp src/synesthesia_engine.cpp src/etherhue_dsp.cpp src/revision_compiler.cpp src/self_listening_loop.cpp src/originality_guard.cpp src/candidate_ranker.cpp src/candidate_swarm_engine.cpp src/stem_types.cpp src/stem_analyzer.cpp src/stem_engine.cpp src/surgical_revision.cpp src/surgical_revision_engine.cpp src/backends/native_preview_backend.cpp)
 target_include_directories(xenon_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_definitions(xenon_core PUBLIC XENON_VERSION="${PROJECT_VERSION}")
-
 if(WIN32)
-    target_link_libraries(xenon_core PUBLIC ole32 oleaut32 mfplat mfplay mfreadwrite mfuuid propsys)
+ target_link_libraries(xenon_core PUBLIC ole32 oleaut32 mfplat mfplay mfreadwrite mfuuid propsys)
 endif()
-
 if(MSVC)
-    target_compile_options(xenon_core PRIVATE /W4 /permissive- /utf-8)
+ target_compile_options(xenon_core PRIVATE /W4 /permissive- /utf-8)
 else()
-    target_compile_options(xenon_core PRIVATE -Wall -Wextra -Wpedantic)
+ target_compile_options(xenon_core PRIVATE -Wall -Wextra -Wpedantic)
 endif()
-
 if(WIN32)
-    add_executable(XENON WIN32 src/win32_app.cpp)
-    target_link_libraries(XENON PRIVATE xenon_core comdlg32 gdi32 user32)
+ add_executable(XENON WIN32 src/win32_app.cpp)
+ target_link_libraries(XENON PRIVATE xenon_core comdlg32 gdi32 user32)
 else()
-    add_executable(XENON src/main.cpp)
-    target_link_libraries(XENON PRIVATE xenon_core)
+ add_executable(XENON src/main.cpp)
+ target_link_libraries(XENON PRIVATE xenon_core)
 endif()
-
 if(MSVC)
-    target_compile_options(XENON PRIVATE /W4 /permissive- /utf-8)
+ target_compile_options(XENON PRIVATE /W4 /permissive- /utf-8)
 else()
-    target_compile_options(XENON PRIVATE -Wall -Wextra -Wpedantic)
+ target_compile_options(XENON PRIVATE -Wall -Wextra -Wpedantic)
 endif()
-
 if(BUILD_TESTING)
-    foreach(test_pair
-        "core;CoreSmoke.cpp"
-        "model_router;ModelRouterSmoke.cpp"
-        "generation_pipeline;GenerationPipelineSmoke.cpp"
-        "native_preview_backend;NativePreviewBackendSmoke.cpp"
-        "backend_policy;BackendPolicySmoke.cpp"
-        "self_listening_loop;SelfListeningLoopSmoke.cpp"
-        "candidate_swarm;CandidateSwarmSmoke.cpp"
-        "originality_guard;OriginalityGuardSmoke.cpp"
-        "stem_intelligence;StemIntelligenceSmoke.cpp"
-        "surgical_revision;SurgicalRevisionSmoke.cpp"
-        "ether_dna_v2;EtherDNAV2Smoke.cpp"
-        "organic_music_memory;OrganicMusicMemorySmoke.cpp"
-        "synesthesia_engine_v2;SynesthesiaEngineV2Smoke.cpp"
-        "etherhue_dsp;EtherHueDSPSmoke.cpp"
-        "composer_agent;ComposerAgentSmoke.cpp"
-        "musician_agents;MusicianAgentsSmoke.cpp"
-        "realtime_jam_engine;RealtimeJamEngineSmoke.cpp"
-        "vst_host;VstHostSmoke.cpp"
-        "midi_intelligence;MidiIntelligenceSmoke.cpp"
-        "mix_engine;MixEngineSmoke.cpp"
-        "mastering_engine;MasteringEngineSmoke.cpp"
-        "project_graph;ProjectGraphSmoke.cpp"
-        "trinity_device_bus;TrinityDeviceBusSmoke.cpp")
-        list(GET test_pair 0 test_name)
-        list(GET test_pair 1 test_file)
-        add_executable(xenon_${test_name}_smoke tests/${test_file})
-        target_link_libraries(xenon_${test_name}_smoke PRIVATE xenon_core)
-        add_test(NAME xenon_${test_name}_smoke COMMAND xenon_${test_name}_smoke)
-    endforeach()
+ foreach(test_pair
+ "core;CoreSmoke.cpp" "model_router;ModelRouterSmoke.cpp" "generation_pipeline;GenerationPipelineSmoke.cpp" "native_preview_backend;NativePreviewBackendSmoke.cpp" "backend_policy;BackendPolicySmoke.cpp" "self_listening_loop;SelfListeningLoopSmoke.cpp" "candidate_swarm;CandidateSwarmSmoke.cpp" "originality_guard;OriginalityGuardSmoke.cpp" "stem_intelligence;StemIntelligenceSmoke.cpp" "surgical_revision;SurgicalRevisionSmoke.cpp" "ether_dna_v2;EtherDNAV2Smoke.cpp" "organic_music_memory;OrganicMusicMemorySmoke.cpp" "synesthesia_engine_v2;SynesthesiaEngineV2Smoke.cpp" "etherhue_dsp;EtherHueDSPSmoke.cpp" "composer_agent;ComposerAgentSmoke.cpp" "musician_agents;MusicianAgentsSmoke.cpp" "realtime_jam_engine;RealtimeJamEngineSmoke.cpp" "vst_host;VstHostSmoke.cpp" "midi_intelligence;MidiIntelligenceSmoke.cpp" "mix_engine;MixEngineSmoke.cpp" "mastering_engine;MasteringEngineSmoke.cpp" "project_graph;ProjectGraphSmoke.cpp" "trinity_device_bus;TrinityDeviceBusSmoke.cpp" "autonomous_producer;AutonomousProducerSmoke.cpp")
+  list(GET test_pair 0 test_name)
+  list(GET test_pair 1 test_file)
+  add_executable(xenon_${test_name}_smoke tests/${test_file})
+  target_link_libraries(xenon_${test_name}_smoke PRIVATE xenon_core)
+  add_test(NAME xenon_${test_name}_smoke COMMAND xenon_${test_name}_smoke)
+ endforeach()
 endif()
