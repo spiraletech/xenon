@@ -62,7 +62,7 @@ int main(){
     manager.load("missing");bool invalid_artifact=false;
     try{(void)manager.generate("missing",req,out,control);}catch(const std::runtime_error&){invalid_artifact=true;}
     if(!invalid_artifact)return 6;
-    bool saw_fault=false;for(const auto& s:manager.statuses())if(s.name=="missing"&&s.state==xenon::RuntimeBackendState::Faulted&&!s.detail.empty())saw_fault=true;
+    bool saw_fault=false;for(const auto& s:manager.statuses())if(s.name=="missing"&&s.state==xenon::RuntimeBackendState::Faulted&&!s.last_error.empty())saw_fault=true;
     if(!saw_fault)return 7;
 
     manager.unload("fixture");if(manager.loaded("fixture"))return 8;
