@@ -36,13 +36,19 @@ int main(){
     if(!host.is_open()||host.plugin_name().empty())return 3;
     if(!host.has_controller())return 4;
 
-    std::vector<float> audio(512*2,0.0f);
+    // Steinberg ADelay defaults to a normalized delay of 1.0, which its processor
+    // maps to one second at the active sample rate. Process beyond 44,100 frames
+    // so the impulse must emerge from the real plug-in DSP instead of falsely
+    // treating the expected initial silence as a host failure.
+    constexpr std::size_t sample_rate=44100;
+    constexpr std::size_t tail_frames=512;
+    std::vector<float> audio((sample_rate+tail_frames)*2,0.0f);
     audio[0]=0.5f;audio[1]=0.5f;
     try{host.process(audio);}
     catch(const std::exception& ex){std::cerr<<"L41 VST3 process failed: "<<ex.what()<<'\n';return 5;}
     bool finite=true;double energy=0.0;
     for(float x:audio){finite=finite&&std::isfinite(x);energy+=std::abs(x);}
-    if(!finite||energy<=0.0)return 6;
+    if(!finite||energy<=0.0){std::cerr<<"L41 VST3 DSP produced no delayed impulse\n";return 6;}
     host.close();if(host.is_open()||host.has_controller())return 7;
 #endif
     return 0;
