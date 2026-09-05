@@ -73,8 +73,16 @@ GenerationArtifact RuntimeBackendManager::generate(const std::string& name,const
     }
     if (control.cancelled()) throw std::runtime_error("L41 generation cancelled; backend result discarded");
     control.report(0.90,"validating-artifact");
-    if (artifact.audio_path.empty() || !std::filesystem::exists(artifact.audio_path))
-        throw std::runtime_error("L41 backend returned a missing audio artifact");
+    if (artifact.audio_path.empty() || !std::filesystem::exists(artifact.audio_path)) {
+        const std::string error="L41 backend returned a missing audio artifact";
+        std::lock_guard<std::mutex> lock(mutex_);
+        status_[name]={name,RuntimeBackendState::Faulted,error};
+        throw std::runtime_error(error);
+    }
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        status_[name]={name,RuntimeBackendState::Loaded,{}};
+    }
     control.report(1.0,"complete");
     return artifact;
 }
