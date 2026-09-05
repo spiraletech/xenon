@@ -75,7 +75,7 @@ void Vst3NativeHost::open(const std::filesystem::path& path, double sample_rate,
     VST3::Hosting::ClassInfo chosen;
     bool found=false;
     for (const auto& info : factory.classInfos()) {
-        if (info.category() == Steinberg::Vst::kVstAudioEffectClass) { chosen=info; found=true; break; }
+        if (info.category() == kVstAudioEffectClass) { chosen=info; found=true; break; }
     }
     if (!found) throw std::runtime_error("L41 VST3 module has no audio-effect class");
 
