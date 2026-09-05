@@ -58,6 +58,13 @@ std::shared_ptr<IModelBackend> RuntimeBackendManager::backend(const std::string&
     return it->second;
 }
 
+GenerationArtifact RuntimeBackendManager::generate(
+    const std::string& name,
+    const GenerationRequest& request,
+    const std::filesystem::path& out) {
+    return generate(name, request, out, RuntimeJobControl{});
+}
+
 GenerationArtifact RuntimeBackendManager::generate(const std::string& name,const GenerationRequest& request,const std::filesystem::path& out,const RuntimeJobControl& control) {
     if (control.cancelled()) throw std::runtime_error("L41 generation cancelled before dispatch");
     control.report(0.05,"dispatch");
