@@ -46,8 +46,13 @@ public:
     [[nodiscard]] GenerationArtifact generate(
         const std::string& name,
         const GenerationRequest& request,
+        const std::filesystem::path& output_directory);
+
+    [[nodiscard]] GenerationArtifact generate(
+        const std::string& name,
+        const GenerationRequest& request,
         const std::filesystem::path& output_directory,
-        const RuntimeJobControl& control = {});
+        const RuntimeJobControl& control);
 
 private:
     BackendRegistry registry_;
