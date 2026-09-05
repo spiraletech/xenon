@@ -4,7 +4,6 @@
 #include "xenon/trinity_device_bus.hpp"
 
 #include <cstddef>
-#include <memory>
 
 namespace xenon {
 
@@ -27,8 +26,8 @@ public:
     void stop() noexcept override;
     [[nodiscard]] bool active() const noexcept override;
     std::size_t pump(TrinityDeviceBus& bus) override;
+    [[nodiscard]] static DeviceGesture map_message(TrinityDeviceKind kind, const NativeMidiMessage& message);
 private:
-    [[nodiscard]] DeviceGesture map(const NativeMidiMessage& message) const;
     TrinityDeviceKind kind_;
     unsigned int input_index_{0};
     NativeMidiInput input_;
