@@ -13,9 +13,9 @@ void MidiTrinityAdapter::start(){input_.open(input_index_);}
 void MidiTrinityAdapter::stop() noexcept{input_.close();}
 bool MidiTrinityAdapter::active() const noexcept{return input_.is_open();}
 
-DeviceGesture MidiTrinityAdapter::map(const NativeMidiMessage& m) const {
+DeviceGesture MidiTrinityAdapter::map_message(TrinityDeviceKind kind,const NativeMidiMessage& m) {
     DeviceGesture g;
-    switch(kind_){
+    switch(kind){
         case TrinityDeviceKind::SigilGuitar:g.device="Sigil Guitar";break;
         case TrinityDeviceKind::GlyphPad:g.device="GlyphPad";break;
         case TrinityDeviceKind::ThreadDeck:g.device="ThreadDeck";break;
@@ -33,7 +33,10 @@ DeviceGesture MidiTrinityAdapter::map(const NativeMidiMessage& m) const {
         g.gate=true;
     }else if(type==0xE0u){
         const int bend=(static_cast<int>(m.data2)<<7)|m.data1;
-        g.x=0.5;g.y=std::clamp(static_cast<double>(bend)/16383.0,0.0,1.0);g.pressure=0.5;g.gate=true;
+        g.x=0.5;
+        g.y=std::clamp(static_cast<double>(bend)/16383.0,0.0,1.0);
+        g.pressure=0.5;
+        g.gate=true;
     }else{
         throw std::invalid_argument("L41 unsupported physical Trinity MIDI message");
     }
@@ -45,7 +48,7 @@ std::size_t MidiTrinityAdapter::pump(TrinityDeviceBus& bus){
     if(!bus.connected(kind_))bus.connect(kind_);
     std::size_t count=0;
     for(const auto&m:input_.drain()){
-        try{auto g=map(m);(void)bus.ingest(kind_,g);++count;}catch(const std::invalid_argument&){/* ignore non-performance MIDI */}
+        try{auto g=map_message(kind_,m);(void)bus.ingest(kind_,g);++count;}catch(const std::invalid_argument&){/* ignore non-performance MIDI */}
     }
     return count;
 }
