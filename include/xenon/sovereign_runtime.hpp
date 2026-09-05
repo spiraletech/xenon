@@ -14,6 +14,7 @@
 #include <vector>
 
 namespace xenon {
+class ModelRouter;
 struct HttpRequest { std::string method{"GET"}; std::string url; std::vector<std::pair<std::string,std::string>> headers; std::vector<std::byte> body; std::string content_type; };
 struct HttpResponse { int status{0}; std::vector<std::byte> body; std::string content_type; };
 class IHttpTransport { public: virtual ~IHttpTransport()=default; virtual HttpResponse send(const HttpRequest& request)=0; };
@@ -62,7 +63,12 @@ struct SovereignRuntimeDiagnostics { BackendHealth ace_step; BackendHealth stabl
 class SovereignRuntime {
 public:
  SovereignRuntime(std::shared_ptr<IHttpTransport>,std::string ace_url,std::string ace_checkpoint,std::string stability_key);
- [[nodiscard]] SovereignRuntimeDiagnostics diagnose(); [[nodiscard]] std::unique_ptr<IModelBackend> make_ace_step() const; [[nodiscard]] std::unique_ptr<IModelBackend> make_stable_audio() const; [[nodiscard]] BackendRegistry registry() const;
+ [[nodiscard]] SovereignRuntimeDiagnostics diagnose();
+ [[nodiscard]] std::string diagnostics_manifest();
+ [[nodiscard]] std::unique_ptr<IModelBackend> make_ace_step() const;
+ [[nodiscard]] std::unique_ptr<IModelBackend> make_stable_audio() const;
+ [[nodiscard]] BackendRegistry registry() const;
+ std::size_t configure_router(ModelRouter& router,const RuntimeConfig& config,int local_priority=100,int remote_priority=50) const;
 private: std::shared_ptr<IHttpTransport> http_; std::string ace_url_,ace_checkpoint_,stability_key_;
 };
 } // namespace xenon
