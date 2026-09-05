@@ -11,6 +11,7 @@ class FakeHttp final : public xenon::IHttpTransport {
 public:
     xenon::HttpResponse send(const xenon::HttpRequest& request) override {
         if (request.url.find("/health") != std::string::npos) return {200, {}, "application/json"};
+        if (request.url.find("/v1/user/account") != std::string::npos) return {200,as_bytes("{\"id\":\"fixture\"}"),"application/json"};
         if (request.url.find("/generate") != std::string::npos) {
             auto p=std::filesystem::temp_directory_path()/"xenon_l41_fake_ace.wav";
             std::ofstream f(p,std::ios::binary);f.write("RIFF0000WAVE",12);f.close();
@@ -26,8 +27,8 @@ int main(){
     namespace fs=std::filesystem;
     auto http=std::make_shared<FakeHttp>();
     xenon::SovereignRuntime rt(http,"http://127.0.0.1:8000","C:/models/ace-step","fake-key");
-    auto d=rt.diagnose();if(!d.ace_step.configured||!d.ace_step.reachable)return 1;if(!d.stable_audio.configured)return 2;
-    const auto manifest=rt.diagnostics_manifest();if(manifest.find("XENON_SOVEREIGN_RUNTIME|1")==std::string::npos||manifest.find("ace_step=1,1")==std::string::npos)return 3;
+    auto d=rt.diagnose();if(!d.ace_step.configured||!d.ace_step.reachable)return 1;if(!d.stable_audio.configured||!d.stable_audio.reachable)return 2;
+    const auto manifest=rt.diagnostics_manifest();if(manifest.find("XENON_SOVEREIGN_RUNTIME|1")==std::string::npos||manifest.find("ace_step=1,1")==std::string::npos||manifest.find("stable_audio=1,1")==std::string::npos)return 3;
     auto registry=rt.registry();auto names=registry.names();if(names.size()!=2||names[0]!="ACE-Step"||names[1]!="Stable Audio")return 4;
     xenon::GenerationRequest r;r.prompt="L41 runtime smoke";r.duration_seconds=1;r.seed=41;
     auto out=fs::temp_directory_path()/"xenon_l41_runtime";fs::remove_all(out);
