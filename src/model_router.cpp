@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <cctype>
 #include <limits>
-#include <sstream>
 #include <stdexcept>
 #include <utility>
 
@@ -17,7 +16,7 @@ bool supports_details(ProviderCapabilities caps,const GenerationRequest&r){if(r.
 std::string safe_component(std::string value){for(auto&ch:value){const auto c=static_cast<unsigned char>(ch);if(!std::isalnum(c)&&ch!='-'&&ch!='_')ch='_';}if(value.empty())value="backend";return value;}
 }
 void ModelRouter::add_provider(std::unique_ptr<IModelBackend> backend,int priority){if(!backend)throw std::invalid_argument("XENON cannot register a null model backend");providers_.push_back({std::shared_ptr<IModelBackend>(std::move(backend)),priority});}
-void ModelRouter::add_provider(std::shared_ptr<IModelBackend> backend,int priority){if(!backend)throw std::invalid_argument("XENON cannot register a null model backend");providers_.push_back({std::move(backend),priority});}
+void ModelRouter::add_shared_provider(std::shared_ptr<IModelBackend> backend,int priority){if(!backend)throw std::invalid_argument("XENON cannot register a null model backend");providers_.push_back({std::move(backend),priority});}
 void ModelRouter::set_policy(BackendPolicy p) noexcept{policy_=p;} const BackendPolicy& ModelRouter::policy() const noexcept{return policy_;}
 std::size_t ModelRouter::provider_count() const noexcept{return providers_.size();}
 std::vector<ProviderInfo> ModelRouter::providers() const{std::vector<ProviderInfo> r;r.reserve(providers_.size());for(const auto&s:providers_)r.push_back({std::string{s.backend->name()},s.backend->capabilities(),s.backend->runtime_type(),s.priority});return r;}
