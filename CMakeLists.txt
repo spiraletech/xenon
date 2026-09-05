@@ -62,6 +62,10 @@ if(BUILD_TESTING)
 
  if(XENON_ENABLE_VST3_SDK)
   set(XENON_ADELAY_DIR ${vst3sdk_SOURCE_DIR}/public.sdk/samples/vst/adelay)
+  set(XENON_ADELAY_GENERATED_DIR ${CMAKE_CURRENT_BINARY_DIR}/l41_adelay_generated)
+  file(MAKE_DIRECTORY ${XENON_ADELAY_GENERATED_DIR})
+  file(WRITE ${XENON_ADELAY_GENERATED_DIR}/projectversion.h
+"#pragma once\n#define MAJOR_VERSION_INT 1\n#define SUB_VERSION_INT 0\n#define RELEASE_NUMBER_INT 0\n#define BUILD_NUMBER_INT 0\n#define MAJOR_VERSION_STR \"1\"\n#define SUB_VERSION_STR \"0\"\n#define RELEASE_NUMBER_STR \"0\"\n#define BUILD_NUMBER_STR \"0\"\n#define FULL_VERSION_STR \"1.0.0.0\"\n")
   smtg_add_vst3plugin(xenon_l41_adelay
    ${XENON_ADELAY_DIR}/source/adelaycontroller.cpp
    ${XENON_ADELAY_DIR}/source/adelaycontroller.h
@@ -74,7 +78,7 @@ if(BUILD_TESTING)
    ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/utility/test/ringbuffertest.cpp
    ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/utility/test/versionparsertest.cpp
   )
-  target_include_directories(xenon_l41_adelay PRIVATE ${vst3sdk_SOURCE_DIR})
+  target_include_directories(xenon_l41_adelay PRIVATE ${vst3sdk_SOURCE_DIR} ${XENON_ADELAY_GENERATED_DIR})
 
   add_executable(xenon_vst3_native_host_smoke tests/Vst3NativeHostSmoke.cpp)
   target_link_libraries(xenon_vst3_native_host_smoke PRIVATE xenon_core)
