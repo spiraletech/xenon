@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <functional>
+#include <map>
 #include <memory>
 #include <optional>
 #include <string>
@@ -39,13 +40,23 @@ public:
 private: std::unordered_map<std::string,Factory> factories_;
 };
 
+struct RuntimeDeviceState {
+ bool sigil_guitar_enabled{true};
+ bool glyph_pad_enabled{true};
+ bool thread_deck_enabled{true};
+};
+
 struct RuntimeConfig {
  std::string ace_url{"http://127.0.0.1:8000"};
  std::string ace_checkpoint;
  std::string stability_model{"stable-audio-2.5"};
+ std::string preferred_backend{"ACE-Step"};
+ std::vector<std::string> enabled_backends{"ACE-Step","Stable Audio"};
  std::vector<std::filesystem::path> plugin_paths;
  std::optional<unsigned int> midi_input;
  std::optional<unsigned int> midi_output;
+ std::map<std::string,unsigned int> midi_cc_mappings;
+ RuntimeDeviceState devices{};
  void save(const std::filesystem::path& path) const;
  static RuntimeConfig load(const std::filesystem::path& path);
 };
