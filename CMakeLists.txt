@@ -61,11 +61,27 @@ if(BUILD_TESTING)
  endforeach()
 
  if(XENON_ENABLE_VST3_SDK)
-  add_subdirectory(${vst3sdk_SOURCE_DIR}/public.sdk/samples/vst/adelay ${CMAKE_BINARY_DIR}/xenon-adelay EXCLUDE_FROM_ALL)
+  # Build the official Steinberg ADelay sources as a XENON-owned fixture instead
+  # of importing the sample's standalone CMake project() boundary.
+  set(XENON_ADELAY_DIR ${vst3sdk_SOURCE_DIR}/public.sdk/samples/vst/adelay)
+  smtg_add_vst3plugin(xenon_l41_adelay
+   ${XENON_ADELAY_DIR}/source/adelaycontroller.cpp
+   ${XENON_ADELAY_DIR}/source/adelaycontroller.h
+   ${XENON_ADELAY_DIR}/source/adelayids.h
+   ${XENON_ADELAY_DIR}/source/adelayprocessor.cpp
+   ${XENON_ADELAY_DIR}/source/adelayprocessor.h
+   ${XENON_ADELAY_DIR}/source/exampletest.cpp
+   ${XENON_ADELAY_DIR}/source/factory.cpp
+   ${XENON_ADELAY_DIR}/source/version.h
+   ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/utility/test/ringbuffertest.cpp
+   ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/utility/test/versionparsertest.cpp
+  )
+  smtg_target_setup_as_vst3_example(xenon_l41_adelay)
+
   add_executable(xenon_vst3_native_host_smoke tests/Vst3NativeHostSmoke.cpp)
   target_link_libraries(xenon_vst3_native_host_smoke PRIVATE xenon_core)
-  target_compile_definitions(xenon_vst3_native_host_smoke PRIVATE XENON_TEST_VST3_PATH="$<TARGET_FILE:adelay>")
-  add_dependencies(xenon_vst3_native_host_smoke adelay)
+  target_compile_definitions(xenon_vst3_native_host_smoke PRIVATE XENON_TEST_VST3_PATH="$<TARGET_FILE:xenon_l41_adelay>")
+  add_dependencies(xenon_vst3_native_host_smoke xenon_l41_adelay)
   add_test(NAME xenon_vst3_native_host_smoke COMMAND xenon_vst3_native_host_smoke)
  endif()
 endif()
