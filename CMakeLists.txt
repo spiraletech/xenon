@@ -4,10 +4,31 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 include(CTest)
+
+option(XENON_ENABLE_VST3_SDK "Enable Steinberg VST3 SDK native hosting" ON)
+if(XENON_ENABLE_VST3_SDK)
+ include(FetchContent)
+ set(SMTG_ENABLE_VST3_PLUGIN_EXAMPLES OFF CACHE BOOL "" FORCE)
+ set(SMTG_ENABLE_VST3_HOSTING_EXAMPLES OFF CACHE BOOL "" FORCE)
+ set(SMTG_ENABLE_VSTGUI_SUPPORT OFF CACHE BOOL "" FORCE)
+ set(SMTG_CREATE_PLUGIN_LINK OFF CACHE BOOL "" FORCE)
+ FetchContent_Declare(vst3sdk
+  GIT_REPOSITORY https://github.com/steinbergmedia/vst3sdk.git
+  GIT_TAG 9fad9770f2ae8542ab1a548a68c1ad1ac690abe0
+  GIT_SUBMODULES_RECURSE TRUE
+ )
+ FetchContent_MakeAvailable(vst3sdk)
+endif()
+
 add_library(xenon_core STATIC
- src/engine.cpp src/wav_renderer.cpp src/spectrum_analyzer.cpp src/media_analyzer.cpp src/player_engine.cpp src/cortex.cpp src/cortex_critic.cpp src/organic.cpp src/organic_music_memory.cpp src/producer.cpp src/backend_policy.cpp src/model_router.cpp src/ether_control.cpp src/ether_composer.cpp src/composer_agent.cpp src/musician_agents.cpp src/realtime_jam_engine.cpp src/vst_host.cpp src/midi_intelligence.cpp src/native_midi_input.cpp src/mix_engine.cpp src/mastering_engine.cpp src/project_graph.cpp src/session_os.cpp src/trinity_device_bus.cpp src/autonomous_producer.cpp src/music_os.cpp src/sovereign_runtime.cpp src/sovereign_runtime_config.cpp src/ether_dna.cpp src/ether_dna_store.cpp src/generation_pipeline.cpp src/synesthesia_scorer.cpp src/synesthesia_engine.cpp src/etherhue_dsp.cpp src/revision_compiler.cpp src/self_listening_loop.cpp src/originality_guard.cpp src/candidate_ranker.cpp src/candidate_swarm_engine.cpp src/stem_types.cpp src/stem_analyzer.cpp src/stem_engine.cpp src/surgical_revision.cpp src/surgical_revision_engine.cpp src/backends/native_preview_backend.cpp)
+ src/engine.cpp src/wav_renderer.cpp src/spectrum_analyzer.cpp src/media_analyzer.cpp src/player_engine.cpp src/cortex.cpp src/cortex_critic.cpp src/organic.cpp src/organic_music_memory.cpp src/producer.cpp src/backend_policy.cpp src/model_router.cpp src/ether_control.cpp src/ether_composer.cpp src/composer_agent.cpp src/musician_agents.cpp src/realtime_jam_engine.cpp src/vst_host.cpp src/vst3_native_host.cpp src/midi_intelligence.cpp src/native_midi_input.cpp src/mix_engine.cpp src/mastering_engine.cpp src/project_graph.cpp src/session_os.cpp src/trinity_device_bus.cpp src/autonomous_producer.cpp src/music_os.cpp src/sovereign_runtime.cpp src/sovereign_runtime_config.cpp src/ether_dna.cpp src/ether_dna_store.cpp src/generation_pipeline.cpp src/synesthesia_scorer.cpp src/synesthesia_engine.cpp src/etherhue_dsp.cpp src/revision_compiler.cpp src/self_listening_loop.cpp src/originality_guard.cpp src/candidate_ranker.cpp src/candidate_swarm_engine.cpp src/stem_types.cpp src/stem_analyzer.cpp src/stem_engine.cpp src/surgical_revision.cpp src/surgical_revision_engine.cpp src/backends/native_preview_backend.cpp)
 target_include_directories(xenon_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_definitions(xenon_core PUBLIC XENON_VERSION="${PROJECT_VERSION}")
+if(XENON_ENABLE_VST3_SDK)
+ target_compile_definitions(xenon_core PUBLIC XENON_VST3_SDK_ENABLED=1)
+ target_sources(xenon_core PRIVATE ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/plugprovider.cpp)
+ target_link_libraries(xenon_core PUBLIC sdk_hosting)
+endif()
 if(WIN32)
  target_link_libraries(xenon_core PUBLIC ole32 oleaut32 mfplat mfplay mfreadwrite mfuuid propsys winhttp winmm)
 endif()
