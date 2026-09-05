@@ -20,19 +20,28 @@ public:
 }
 
 int main(){
+    namespace fs=std::filesystem;
     auto http=std::make_shared<FakeHttp>();
     xenon::SovereignRuntime rt(http,"http://127.0.0.1:8000","C:/models/ace-step","fake-key");
     auto d=rt.diagnose();
     if(!d.ace_step.configured||!d.ace_step.reachable)return 1;
     if(!d.stable_audio.configured)return 2;
-    auto stable=rt.make_stable_audio();
+    auto registry=rt.registry();
+    auto names=registry.names();
+    if(names.size()!=2||names[0]!="ACE-Step"||names[1]!="Stable Audio")return 3;
+    auto stable=registry.create("Stable Audio");
     xenon::GenerationRequest r;r.prompt="L41 runtime smoke";r.duration_seconds=1;r.seed=41;
-    auto out=std::filesystem::temp_directory_path()/"xenon_l41_runtime";std::filesystem::remove_all(out);
-    auto a=stable->generate(r,out);if(!std::filesystem::exists(a.audio_path)||a.backend_name!="Stable Audio")return 3;
+    auto out=fs::temp_directory_path()/"xenon_l41_runtime";fs::remove_all(out);
+    auto a=stable->generate(r,out);if(!fs::exists(a.audio_path)||a.backend_name!="Stable Audio")return 4;
+
+    xenon::RuntimeConfig config;config.ace_url="http://localhost:8000";config.ace_checkpoint="C:/models/ace";config.stability_model="stable-audio-2.5";config.midi_output=2;config.plugin_paths={"C:/VST3","D:/Audio/Plugins"};
+    auto config_path=out/"runtime.cfg";config.save(config_path);auto restored=xenon::RuntimeConfig::load(config_path);
+    if(restored.ace_url!=config.ace_url||restored.ace_checkpoint!=config.ace_checkpoint||!restored.midi_output||*restored.midi_output!=2||restored.plugin_paths.size()!=2)return 5;
+
     auto vst=xenon::vst3_sdk_status();
 #ifndef XENON_VST3_SDK_ENABLED
-    if(vst.runtime_ready||vst.sdk_enabled)return 4;
+    if(vst.runtime_ready||vst.sdk_enabled)return 6;
 #endif
     xenon::NativeMidiRuntime midi;(void)midi.enumerate();
-    std::filesystem::remove_all(out);return 0;
+    fs::remove_all(out);return 0;
 }
