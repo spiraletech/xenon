@@ -15,7 +15,7 @@ struct BackendGenerationAttempt { RouteDecision route; GenerationArtifact artifa
 class ModelRouter {
 public:
     void add_provider(std::unique_ptr<IModelBackend> backend,int priority=0);
-    void add_provider(std::shared_ptr<IModelBackend> backend,int priority=0);
+    void add_shared_provider(std::shared_ptr<IModelBackend> backend,int priority=0);
     void set_policy(BackendPolicy policy) noexcept; [[nodiscard]] const BackendPolicy& policy() const noexcept;
     [[nodiscard]] std::size_t provider_count() const noexcept; [[nodiscard]] std::vector<ProviderInfo> providers() const; [[nodiscard]] RouteDecision route(const GenerationRequest& request) const;
     GenerationArtifact generate(const GenerationRequest& request,const std::filesystem::path& output_directory);
