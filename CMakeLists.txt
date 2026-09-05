@@ -79,6 +79,7 @@ if(BUILD_TESTING)
    ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/utility/test/versionparsertest.cpp
   )
   target_include_directories(xenon_l41_adelay PRIVATE ${vst3sdk_SOURCE_DIR} ${XENON_ADELAY_GENERATED_DIR})
+  target_link_libraries(xenon_l41_adelay PRIVATE sdk)
 
   add_executable(xenon_vst3_native_host_smoke tests/Vst3NativeHostSmoke.cpp)
   target_link_libraries(xenon_vst3_native_host_smoke PRIVATE xenon_core)
