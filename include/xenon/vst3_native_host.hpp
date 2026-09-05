@@ -37,6 +37,7 @@ public:
     void open(const std::filesystem::path& module_path, double sample_rate, std::uint32_t max_block_frames);
     void close() noexcept;
     [[nodiscard]] bool is_open() const noexcept;
+    [[nodiscard]] bool has_controller() const noexcept;
     [[nodiscard]] const std::string& plugin_name() const noexcept;
 
     void process(std::vector<float>& interleaved_stereo,
