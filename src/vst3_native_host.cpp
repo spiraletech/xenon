@@ -11,6 +11,7 @@
 #include "public.sdk/source/vst/hosting/plugprovider.h"
 #include "pluginterfaces/vst/ivstaudioprocessor.h"
 #include "pluginterfaces/vst/ivstcomponent.h"
+#include "pluginterfaces/vst/ivsteditcontroller.h"
 #include "pluginterfaces/vst/ivstevents.h"
 #include "pluginterfaces/vst/vstspeaker.h"
 #include "pluginterfaces/vst/vsttypes.h"
@@ -27,6 +28,7 @@ struct Vst3NativeHost::Impl {
     VST3::Hosting::Module::Ptr module;
     Steinberg::IPtr<Steinberg::Vst::PlugProvider> provider;
     Steinberg::IPtr<Steinberg::Vst::IComponent> component;
+    Steinberg::IPtr<Steinberg::Vst::IEditController> controller;
     Steinberg::IPtr<Steinberg::Vst::IAudioProcessor> processor;
 #endif
 };
@@ -82,6 +84,7 @@ void Vst3NativeHost::open(const std::filesystem::path& path, double sample_rate,
     auto provider=Steinberg::owned(new Steinberg::Vst::PlugProvider(factory, chosen, true));
     Steinberg::IPtr<Steinberg::Vst::IComponent> component=Steinberg::owned(provider->getComponent());
     if (!component) throw std::runtime_error("L41 VST3 component initialization failed");
+    Steinberg::IPtr<Steinberg::Vst::IEditController> controller=provider->getControllerPtr();
     Steinberg::IPtr<Steinberg::Vst::IAudioProcessor> processor=Steinberg::U::cast<Steinberg::Vst::IAudioProcessor>(component);
     if (!processor) throw std::runtime_error("L41 VST3 component does not expose IAudioProcessor");
     if (processor->canProcessSampleSize(Steinberg::Vst::kSample32) != Steinberg::kResultTrue)
@@ -120,6 +123,7 @@ void Vst3NativeHost::open(const std::filesystem::path& path, double sample_rate,
     impl_->module=std::move(module);
     impl_->provider=std::move(provider);
     impl_->component=std::move(component);
+    impl_->controller=std::move(controller);
     impl_->processor=std::move(processor);
     impl_->name=std::string(chosen.name());
     impl_->sample_rate=sample_rate;
@@ -134,6 +138,7 @@ void Vst3NativeHost::close() noexcept {
     if (impl_->processor) impl_->processor->setProcessing(false);
     if (impl_->component) impl_->component->setActive(false);
     impl_->processor=nullptr;
+    impl_->controller=nullptr;
     impl_->component=nullptr;
     impl_->provider=nullptr;
     impl_->module.reset();
@@ -143,6 +148,13 @@ void Vst3NativeHost::close() noexcept {
 }
 
 bool Vst3NativeHost::is_open() const noexcept { return impl_ && impl_->open; }
+bool Vst3NativeHost::has_controller() const noexcept {
+#ifdef XENON_VST3_SDK_ENABLED
+    return impl_ && static_cast<bool>(impl_->controller);
+#else
+    return false;
+#endif
+}
 const std::string& Vst3NativeHost::plugin_name() const noexcept { return impl_->name; }
 
 void Vst3NativeHost::process(std::vector<float>& stereo, const std::vector<Vst3MidiNote>& notes) {
